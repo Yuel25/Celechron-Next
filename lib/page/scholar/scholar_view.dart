@@ -1,7 +1,6 @@
 // Official packages
 import 'package:celechron/page/scholar/todo/todo_card.dart';
 import 'package:celechron/http/zjuServices/exceptions.dart';
-import 'package:celechron/utils/platform_features.dart';
 import 'package:extended_sliver/extended_sliver.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
@@ -15,7 +14,6 @@ import 'package:celechron/design/round_rectangle_card.dart';
 import 'package:celechron/design/custom_colors.dart';
 import 'package:celechron/design/animate_button.dart';
 import 'package:celechron/design/refresh_status_indicator.dart';
-import 'package:celechron/design/rolling_shimmer_text.dart';
 
 import 'package:celechron/page/search/search_view.dart';
 import 'course_list/course_list_view.dart';
@@ -140,7 +138,6 @@ class ScholarPage extends StatelessWidget {
   }
 
   final _scholarController = Get.put(ScholarController());
-  final ValueNotifier<bool> _isRefreshing = ValueNotifier(false);
 
   // 让页内横向列表在桌面端也响应鼠标拖动。外层 PageView 为支持鼠标切页开启了
   // 鼠标拖动，横向列表若不响应鼠标，拖动会漏到 PageView 上造成误切页；
@@ -819,39 +816,6 @@ class ScholarPage extends StatelessWidget {
                         // Do not popup the keyboard
                       ),
                     ),
-                    if (PlatformFeatures.isDesktop)
-                      ValueListenableBuilder(
-                          valueListenable: _isRefreshing,
-                          builder: (context, isRefreshing, child) =>
-                              CupertinoButton(
-                                onPressed: isRefreshing
-                                    ? null
-                                    : () async {
-                                        _isRefreshing.value = true;
-                                        late final List<String?> results;
-                                        try {
-                                          results = await _scholarController
-                                              .fetchData();
-                                        } finally {
-                                          _isRefreshing.value = false;
-                                        }
-                                        if (context.mounted &&
-                                            results.any(
-                                                (result) => result != null)) {
-                                          await showRefreshResultDialog(
-                                              context, results);
-                                        }
-                                      },
-                                child: isRefreshing
-                                    ? const CupertinoActivityIndicator()
-                                    : Icon(
-                                        CupertinoIcons.refresh,
-                                        color: CupertinoDynamicColor.resolve(
-                                            CupertinoColors.systemBlue,
-                                            context),
-                                        size: 20,
-                                      ),
-                              ))
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -899,41 +863,6 @@ class ScholarPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                // 桌面端刷新超过 5 秒后的状态条：小转圈 + 滚动文案，随刷新结束收起。
-                // 移动端的状态文案由下方 CupertinoSliverRefreshControl 的 builder 展示
-                if (PlatformFeatures.isDesktop)
-                  Obx(() {
-                    final message =
-                        _scholarController.refreshStatusMessage.value;
-                    return AnimatedSize(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOut,
-                      alignment: Alignment.topCenter,
-                      // AnimatedSwitcher 让收起时末条文案先淡出、条带再合拢，
-                      // 而不是内容瞬间消失
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: message == null
-                            ? const SizedBox(
-                                key: ValueKey('refreshStatusStripEmpty'),
-                                width: double.infinity)
-                            : Padding(
-                                key: const ValueKey('refreshStatusStrip'),
-                                padding:
-                                    const EdgeInsets.only(top: 6, bottom: 2),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const CupertinoActivityIndicator(radius: 7),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                        child: RollingShimmerText(message)),
-                                  ],
-                                ),
-                              ),
-                      ),
-                    );
-                  }),
                 const SizedBox(height: 4),
                 Divider(
                   thickness: 0,
