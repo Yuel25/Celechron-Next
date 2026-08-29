@@ -9,10 +9,6 @@ final class PlatformFeatures {
     return Platform.isAndroid;
   }
 
-  static bool get isMobile {
-    return Platform.isAndroid;
-  }
-
   static bool get isDesktop {
     return Platform.isWindows;
   }
