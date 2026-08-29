@@ -43,7 +43,7 @@ class ECardWidgetMessenger {
           value: "3200000000",
           iOptions: secureStorageIOSOptions);
 
-      if (notifyNative && (Platform.isIOS || Platform.isAndroid)) {
+      if (notifyNative && Platform.isAndroid) {
         await _platform.invokeMethod('update');
       }
       return true;

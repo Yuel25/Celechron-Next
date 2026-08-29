@@ -34,8 +34,6 @@ class Fuse {
       if (Platform.isAndroid) {
         checkUpdateUrl =
             "https://api.celechron.top/checkUpdate?platform=android";
-      } else if (Platform.isIOS) {
-        checkUpdateUrl = "https://api.celechron.top/checkUpdate?platform=ios";
       } else {
         checkUpdateUrl =
             "https://api.celechron.top/checkUpdate?platform=others";

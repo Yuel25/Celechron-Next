@@ -124,8 +124,7 @@ class OptionController extends GetxController {
       final workmanager = Workmanager();
       await workmanager.initialize(callbackDispatcher);
       // Android 的周期任务会跨 App 启动持久化；不要每次页面控制器初始化时
-      // 重新排一个 10 秒后的任务。iOS 仍需提交 BGAppRefresh 请求，但最早
-      // 执行时间与正常周期一致，并由前台租约做最终保护。
+      // 重新排一个 10 秒后的任务。
       if (Platform.isAndroid &&
           await workmanager
               .isScheduledByUniqueName(_backgroundScholarFetchTask)) {
@@ -154,7 +153,6 @@ class OptionController extends GetxController {
   Future<void> _cancelBackgroundWorker() async {
     try {
       await Workmanager().cancelByUniqueName(_backgroundScholarFetchTask);
-      if (Platform.isIOS) await Workmanager().printScheduledTasks();
     } on Object catch (error, stackTrace) {
       DiagnosticLogService.instance.record(
         level: CelechronLogLevel.warning,
