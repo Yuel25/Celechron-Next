@@ -13,6 +13,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -57,6 +61,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Run tests
+        run: flutter test
+
       - name: Build release APK
         run: flutter build apk --release
 
@@ -65,7 +72,15 @@ jobs:
           VERSION=$(sed -n 's/^version: \([0-9.]*\).*/\1/p' pubspec.yaml)
           cp build/app/outputs/flutter-apk/app-release.apk "Celechron-$VERSION.apk"
 
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Celechron-APK
+          path: Celechron-*.apk
+          retention-days: 7
+
       - name: Create GitHub release
+        if: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.tag != '' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
