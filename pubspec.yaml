@@ -10,34 +10,31 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  get:
-  cupertino_icons:
-  table_calendar:
-  hive:
-  hive_flutter:
-  uuid:
-  flutter_svg:
-  intl:
-  extended_sliver:
-  flutter_launcher_icons:
-  rename_app:
-  url_launcher:
+  get: ^4.7.3
+  table_calendar: ^3.2.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  uuid: ^4.6.0
+  extended_sliver: ^2.1.3
+  flutter_launcher_icons: ^0.14.4
+  rename_app: ^1.6.6
+  url_launcher: ^6.3.2
   quiver: ^3.2.1
   workmanager:
     git:
       url: https://github.com/Celechron/flutter_workmanager.git
-      ref: main
+      ref: d7e6ba5ef3796fafe54d9739e481f01058751b4d # 固定 commit，避免 fork 的 main 分支变动导致构建漂移
       path: workmanager
   flutter_local_notifications: ^17.2.4
   flutter_secure_storage: ^9.2.4
-  qr_flutter:
-  app_links:
-  crypto: 
-  path_provider:
+  qr_flutter: ^4.1.0
+  app_links: ^7.2.1
+  crypto: ^3.0.7
+  path_provider: ^2.1.6
   share_plus: ^12.0.1 # 9fb0fb 提交当中提升了版本
-  device_calendar:
-  timezone:
-  device_info_plus:
+  device_calendar: ^4.3.3
+  timezone: ^0.9.4
+  device_info_plus: ^12.4.0
 
 dev_dependencies:
   flutter_test:
@@ -49,7 +46,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
-  pigeon: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -98,5 +94,3 @@ flutter:
 flutter_launcher_icons:
   image_path: assets/logo.png
   android: true
-  ios: true
-  remove_alpha_ios: true
