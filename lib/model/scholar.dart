@@ -56,9 +56,6 @@ class Scholar {
   // 所获学分
   double credit = 0.0;
 
-  // 主修成绩，两个数据依次为主修GPA，主修学分
-  List<double> majorGpaAndCredit = [0.0, 0.0];
-
   // 特殊日期
   Map<DateTime, String> specialDates = {};
 
@@ -166,7 +163,6 @@ class Scholar {
     gpa = [0.0, 0.0, 0.0, 0.0];
     aboardGpa = [0.0, 0.0, 0.0, 0.0];
     credit = 0.0;
-    majorGpaAndCredit = [0.0, 0.0];
     pt2 = 0.0;
     pt3 = 0.0;
     pt4 = 0.0;
@@ -379,8 +375,8 @@ class Scholar {
       tempPracticeSnapshot = (_spider as UgrsSpider).practiceSnapshot;
     }
 
-    setScholar(value.item2, value.item3, tempGrades, value.item5, value.item6,
-        value.item7, tempPracticeSnapshot);
+    setScholar(value.item2, value.item3, tempGrades, value.item5,
+        value.item6, tempPracticeSnapshot);
 
     // 保研成绩，只取第一次
     var netGrades = grades.values.map((e) => e.first);
@@ -429,13 +425,12 @@ class Scholar {
       List<String?> errorMessage,
       List<Semester> tempSemesters,
       Map<String, List<Grade>> tempGrades,
-      List<double> tempMajorGpaAndCredit,
       Map<DateTime, String> tempSpecialDates,
       List<Todo> tempTodos,
       PracticeScoreSnapshot? tempPracticeSnapshot) {
     // 各模块独立降级：某一来源失败时保留该模块旧数据，不阻断其它成功结果。
-    var errorItems = ["成绩", "主修", "课表", "作业", "实践"];
-    var errorResult = [false, false, false, false, false];
+    var errorItems = ["成绩", "课表", "作业", "实践"];
+    var errorResult = [false, false, false, false];
 
     for (int i = 0; i < errorItems.length; i++) {
       for (var e in errorMessage) {
@@ -454,10 +449,7 @@ class Scholar {
     if (errorResult[0] == false && tempGrades.isNotEmpty) {
       grades = tempGrades;
     }
-    if (errorResult[1] == false && tempMajorGpaAndCredit.isNotEmpty) {
-      majorGpaAndCredit = tempMajorGpaAndCredit;
-    }
-    if (errorResult[2] == false && tempSemesters.isNotEmpty) {
+    if (errorResult[1] == false && tempSemesters.isNotEmpty) {
       semesters = tempSemesters;
     } else if (tempSemesters.isNotEmpty) {
       // 降级刷新只合并可用片段，避免不完整新对象覆盖已有课表明细。
@@ -472,7 +464,7 @@ class Scholar {
       }
       semesters.sort((a, b) => b.name.compareTo(a.name));
     }
-    if (errorResult[3] == false) {
+    if (errorResult[2] == false) {
       todos = tempTodos;
     }
     if (tempPracticeSnapshot != null) {
@@ -512,7 +504,6 @@ class Scholar {
       'gpa': gpa,
       'aboardGpa': aboardGpa,
       'credit': credit,
-      'majorGpaAndCredit': majorGpaAndCredit,
       'specialDates':
           specialDates.map((k, v) => MapEntry(k.toIso8601String(), v)),
       'lastUpdateTimeGrade': lastUpdateTimeGrade.toIso8601String(),
@@ -633,7 +624,6 @@ class Scholar {
     gpa = numberList(json['gpa'], 4);
     aboardGpa = numberList(json['aboardGpa'], 4);
     credit = asDouble(json['credit']) ?? 0.0;
-    majorGpaAndCredit = numberList(json['majorGpaAndCredit'], 2);
 
     specialDates = {};
     for (final entry

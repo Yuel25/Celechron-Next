@@ -259,7 +259,6 @@ class DiagnosticReportParser {
     '课表',
     '考试',
     '成绩',
-    '主修',
     '作业',
     '实践/素质拓展',
   ];
@@ -719,7 +718,6 @@ class DiagnosticReportParser {
 
   static String? _canonicalModule(String module, String message) {
     final text = '$module $message';
-    if (text.contains('主修')) return '主修';
     if (text.contains('课表')) return '课表';
     if (text.contains('考试')) return '考试';
     if (text.contains('成绩') || text.contains('成绩单')) return '成绩';

@@ -282,7 +282,6 @@ class GrsNew {
           ..fourPoint = 0.0
           ..fourPointLegacy = 0.0
           ..hundredPoint = asInt(rawGrade["zf"]) ?? 0
-          ..major = true
           ..gpaIncluded = false
           ..creditIncluded = true
           ..isOnline = comments.contains("线上") ||

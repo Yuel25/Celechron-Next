@@ -403,14 +403,6 @@ class OptionPage extends StatelessWidget {
                             ))),
                     onTap: () => _showBrightnessPicker(context),
                   ),
-                  CupertinoListTile(
-                    title: const Text('付款码'),
-                    trailing: const BackChervonRow(),
-                    onTap: () async {
-                      Navigator.of(context, rootNavigator: true)
-                          .pushNamed('/ecardpaypage');
-                    },
-                  ),
                 ])),
             // 关于
             SliverToBoxAdapter(
@@ -431,6 +423,8 @@ class OptionPage extends StatelessWidget {
                         CupertinoPageRoute(
                           builder: (context) => DiagnosticLogPage(
                             version: _optionController.celechronVersion,
+                            buildNumber:
+                                _optionController.celechronBuildNumber,
                           ),
                         ),
                       );
@@ -495,7 +489,7 @@ class OptionPage extends StatelessWidget {
                       ),
                       onTap: () async {
                         await launchUrlString(
-                          'https://celechron.top',
+                          'https://github.com/Yuel25/Celechron-Next',
                           mode: LaunchMode.externalApplication,
                         );
                       },

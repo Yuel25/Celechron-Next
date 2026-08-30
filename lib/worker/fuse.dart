@@ -52,36 +52,39 @@ class Fuse {
         return null;
       }
 
-      late String checkUpdateUrl;
-      if (Platform.isAndroid) {
-        checkUpdateUrl =
-            "https://api.celechron.top/checkUpdate?platform=android";
-      } else {
-        checkUpdateUrl =
-            "https://api.celechron.top/checkUpdate?platform=others";
-      }
-
+      // 通过 GitHub Releases 检查更新；无发布、限流或无网络时静默跳过
       var request = await _httpClient
-          .getUrl(Uri.parse(checkUpdateUrl))
+          .getUrl(Uri.parse(
+              'https://api.github.com/repos/Yuel25/Celechron-Next/releases/latest'))
           .timeout(const Duration(seconds: 8));
+      request.headers
+          .set(HttpHeaders.acceptHeader, 'application/vnd.github+json');
       var response = await request.close().timeout(const Duration(seconds: 8));
-      var html = await response.transform(utf8.decoder).join();
+      if (response.statusCode != HttpStatus.ok) {
+        return null;
+      }
+      var release = jsonDecode(await response.transform(utf8.decoder).join())
+          as Map<String, dynamic>;
 
-      var match = RegExp('[0-9.]+').allMatches(html);
-      remoteVersion = match
-          .elementAt(0)
-          .group(0)!
-          .split('.')
-          .map((e) => int.parse(e))
-          .toList();
-      remoteBuild = int.parse(match.elementAt(1).group(0)!);
+      // 标签格式为 vX.Y.Z（无 build 段），与 pubspec 的 version 对应
+      var match = RegExp(r'^v?(\d+)\.(\d+)\.(\d+)(?:\+(\d+))?$')
+          .firstMatch(release['tag_name'] as String? ?? '');
+      if (match == null) {
+        return null;
+      }
+      remoteVersion = [
+        int.parse(match.group(1)!),
+        int.parse(match.group(2)!),
+        int.parse(match.group(3)!),
+      ];
+      remoteBuild = match.group(4) != null ? int.parse(match.group(4)!) : 0;
 
-      hasNewVersion = _compareVersion(html.contains('beta'));
+      hasNewVersion = _compareVersion((release['prerelease'] as bool?) ?? false);
       lastUpdateTime = DateTime.now();
       await _db.setFuse(this);
 
       if (hasNewVersion) {
-        return "有新版本可用";
+        return '有新版本可用：${release['tag_name']}';
       }
       return null;
     } catch (e) {

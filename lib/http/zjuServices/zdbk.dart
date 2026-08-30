@@ -5,7 +5,6 @@ import 'package:celechron/utils/tuple.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:celechron/database/database_helper.dart';
-import 'package:celechron/utils/gpa_helper.dart';
 import 'package:celechron/model/grade.dart';
 import 'package:celechron/model/session.dart';
 import 'package:celechron/model/exams_dto.dart';
@@ -286,7 +285,7 @@ class Zdbk {
     );
   }
 
-  List<Grade> _parseGrades(Object? raw, String context, {bool major = false}) {
+  List<Grade> _parseGrades(Object? raw, String context) {
     final items = asDynamicList(raw) ?? const [];
     final grades = <Grade>[];
     for (var index = 0; index < items.length; index++) {
@@ -298,8 +297,7 @@ class Zdbk {
         continue;
       }
       try {
-        final grade = major ? Grade.fromMajor(item) : Grade(item);
-        grades.add(grade);
+        grades.add(Grade(item));
       } on Object catch (error, stackTrace) {
         if (kDebugMode) {
           debugPrint(
@@ -350,72 +348,6 @@ class Zdbk {
     return exams;
   }
 
-  Future<Tuple<Exception?, Tuple<List<double>, String>>> getMajorGrade(
-      HttpClient httpClient) async {
-    return await _withAutoRelogin(httpClient, (relogged, retried) async {
-      late HttpClientRequest request;
-      late HttpClientResponse response;
-      final uri = Uri.parse(
-          "https://zdbk.zju.edu.cn/jwglxt/zycjtj/xszgkc_cxXsZgkcIndex.html?doType=query&queryModel.showCount=5000");
-
-      try {
-        request = await httpClient.postUrl(uri).timeout(
-            const Duration(seconds: 8),
-            onTimeout: () => throw requestTimeout());
-        request.headers
-          ..add("Referer",
-              "https://zdbk.zju.edu.cn/jwglxt/xtgl/index_initMenu.html")
-          ..set('Connection', 'close')
-          ..add('User-Agent',
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36')
-          ..add('Accept', 'application/json, text/javascript, */*; q=0.01')
-          ..add('X-Requested-With', 'XMLHttpRequest');
-        request.cookies.add(_jSessionId!);
-        request.cookies.add(_route!);
-        request.followRedirects = false;
-        response = await request.close().timeout(const Duration(seconds: 8),
-            onTimeout: () => throw requestTimeout());
-
-        var responseText =
-            await readResponseBody(response, context: '教务网主修成绩接口');
-        const context = '教务网主修成绩接口';
-        _validateResponse(response, responseText,
-            context: context,
-            requestUri: uri,
-            relogged: relogged,
-            retried: retried);
-        final payload = decodeJsonMap(responseText,
-            context: '$context；HTTP ${response.statusCode}');
-        final items = asDynamicList(payload['items']);
-        if (items == null) {
-          throw ExceptionWithMessage(
-              '$context：缺少 items 数组；HTTP ${response.statusCode}'
-              '；响应摘要：${responseSummary(responseText)}');
-        }
-        final grades = _parseGrades(items, context, major: true);
-        var majorGpa = GpaHelper.calculateGpa(grades);
-        _writeCache('zdbk_MajorGrade', jsonEncode(items));
-        return Tuple(
-            null, Tuple([majorGpa.item1[0], majorGpa.item2], responseText));
-      } on Object catch (error, stackTrace) {
-        if (error is AuthenticationExpiredException) rethrow;
-        final exception = exceptionFrom(error,
-            context: '教务网主修成绩接口',
-            requestUri: uri,
-            relogged: relogged,
-            retried: retried,
-            stackTrace: stackTrace);
-        final cachedItems = _cachedList('zdbk_MajorGrade', '教务网主修成绩缓存');
-        final grades = _parseGrades(cachedItems.data, '教务网主修成绩缓存', major: true);
-        var majorGpa = GpaHelper.calculateGpa(grades);
-        return Tuple(
-            _cacheAwareException(exception, cachedItems, '教务网主修成绩'),
-            Tuple([majorGpa.item1[0], majorGpa.item2],
-                '{"items":${jsonEncode(cachedItems.data)},"limit":0}'));
-      }
-    });
-  }
-
   Future<Tuple<Exception?, Iterable<Grade>>> getTranscript(
       HttpClient httpClient) async {
     return await _withAutoRelogin(httpClient, (relogged, retried) async {
@@ -458,6 +390,11 @@ class Zdbk {
               '；响应摘要：${responseSummary(responseText)}');
         }
         final grades = _parseGrades(items, context);
+        DiagnosticLogService.instance.record(
+          module: '教务网成绩接口',
+          operation: 'parse',
+          message: 'items=${items.length}；解析成功=${grades.length}',
+        );
         _writeCache('zdbk_Transcript', jsonEncode(items));
         return Tuple(null, grades);
       } on Object catch (error, stackTrace) {

@@ -276,7 +276,11 @@ class ScholarPage extends StatelessWidget {
                                               CustomCupertinoDynamicColors
                                                   .peach)),
                                     ),
-                                    const SizedBox(width: 8),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
                                     Expanded(
                                       child: Obx(() => TwoLineCard(
                                           title: '四分制',
@@ -289,32 +293,6 @@ class ScholarPage extends StatelessWidget {
                                           backgroundColor:
                                               CustomCupertinoDynamicColors
                                                   .spring)),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Obx(() => TwoLineCard(
-                                          title: '主修均绩',
-                                          content: maskGPA(_scholarController
-                                              .scholar.majorGpaAndCredit[0]
-                                              .toStringAsFixed(2)),
-                                          backgroundColor:
-                                              CustomCupertinoDynamicColors
-                                                  .sakura)),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Obx(() => TwoLineCard(
-                                          title: '主修学分',
-                                          content: maskGPA(_scholarController
-                                              .scholar.majorGpaAndCredit[1]
-                                              .toStringAsFixed(1)),
-                                          backgroundColor:
-                                              CustomCupertinoDynamicColors
-                                                  .sand)),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(

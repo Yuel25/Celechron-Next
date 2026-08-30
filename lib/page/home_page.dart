@@ -173,7 +173,7 @@ class _HomePageState extends State<HomePage> {
                   child: const Text('访问网站'),
                   onPressed: () async {
                     await launchUrlString(
-                      'https://celechron.top',
+                      'https://github.com/Yuel25/Celechron-Next',
                       mode: LaunchMode.externalApplication,
                     );
                   },

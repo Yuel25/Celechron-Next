@@ -110,17 +110,17 @@ void main() {
     expect(find.text('显示堆栈'), findsNothing);
 
     final parsingTechnicalButton = find.byKey(
-      const ValueKey('toggle-issue-fg-degraded-type-error-主修'),
+      const ValueKey('toggle-issue-fg-degraded-type-error-实践/素质拓展'),
     );
     await tester.ensureVisible(parsingTechnicalButton);
     await tester.pumpAndSettle();
     await tester.tap(parsingTechnicalButton);
     await tester.pumpAndSettle();
     expect(find.text('显示堆栈'), findsOneWidget);
-    expect(find.textContaining('zdbk.dart:373'), findsNothing);
+    expect(find.textContaining('sztz.dart:214'), findsNothing);
     await tester.tap(find.text('显示堆栈'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('zdbk.dart:373'), findsOneWidget);
+    expect(find.textContaining('sztz.dart:214'), findsOneWidget);
   });
 
   testWidgets('深色模式和较大字体下页面可渲染', (tester) async {

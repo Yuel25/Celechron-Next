@@ -9,24 +9,20 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:app_links/app_links.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:celechron/model/scholar.dart';
 import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/model/option.dart';
 import 'package:celechron/page/home_page.dart';
-import 'package:celechron/page/option/ecard_pay_page.dart';
 import 'package:celechron/services/diagnostic_log_service.dart';
 import 'package:celechron/services/refresh_coordinator.dart';
-import 'package:celechron/worker/ecard_widget_messenger.dart';
 import 'package:celechron/worker/fuse.dart';
 import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/utils/global.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  ECardWidgetMessenger.installNativeHandler();
 
   final packageInfo = await PackageInfo.fromPlatform();
   Fuse.configurePackageVersion(
@@ -57,14 +53,7 @@ void main() async {
   if (scholar.value.isLogan) {
     // 启动恢复只有一个自动刷新入口；会话重建由 Scholar.refresh 内部完成。
     // 用户此时手动刷新会复用并等待这一个 refresh Future。
-    // 校园卡使用不同 HttpClient/User-Agent，等 Scholar 认证和抓取
-    // 完成后再启动，避免两套 CAS 链路在启动瞬间互相干扰。
-    unawaited(
-      _refreshRestoredScholar(scholar)
-          .whenComplete(ECardWidgetMessenger.update),
-    );
-  } else {
-    unawaited(ECardWidgetMessenger.update());
+    unawaited(_refreshRestoredScholar(scholar));
   }
 }
 
@@ -105,8 +94,6 @@ class _CelechronAppState extends State<CelechronApp>
     WidgetsBinding.instance.addObserver(this);
     _startForegroundLease();
 
-    // 监听AppLinks，用于跳转至付款码页面
-    _initAppLinks();
     // 初始化通知
     _initNotification();
     // 设置Android状态栏和导航栏样式
@@ -130,9 +117,6 @@ class _CelechronAppState extends State<CelechronApp>
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
       _stopForegroundLease();
-    }
-    if (state == AppLifecycleState.paused) {
-      ECardWidgetMessenger.update();
     }
   }
 
@@ -180,24 +164,9 @@ class _CelechronAppState extends State<CelechronApp>
           ),
           title: 'Celechron',
           home: const HomePage(title: 'Celechron'),
-          initialRoute: '/',
-          routes: {
-            '/ecardpaypage': (context) => ECardPayPage(),
-          },
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
         ));
-  }
-
-  void _initAppLinks() {
-    final appLinks = AppLinks();
-    appLinks.uriLinkStream.listen((uri) {
-      if (uri.toString() == 'celechron://ecardpaypage') {
-        navigator?.popUntil((route) =>
-            !(route.settings.name?.endsWith('ecardpaypage') ?? false));
-        navigator?.pushNamed('/ecardpaypage');
-      }
-    });
   }
 
   void _initStatusBar() {

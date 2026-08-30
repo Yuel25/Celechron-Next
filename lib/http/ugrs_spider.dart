@@ -59,7 +59,6 @@ class UgrsSpider implements Spider {
     '课表',
     '考试',
     '成绩',
-    '主修',
     '作业',
     '实践'
   ];
@@ -333,11 +332,9 @@ class UgrsSpider implements Spider {
 
     var outSemesters = <Semester>[];
     var outGrades = <Grade>[];
-    var outMajorGrade = <double>[];
     var outSpecialDates = <DateTime, String>{};
     var outTodos = <Todo>[];
     var loginErrorMessages = <String?>[null, null, null];
-    var majorCourseIds = <String>{};
 
     if (DateTime.now().difference(_lastUpdateTime).inMinutes > 15) {
       loginErrorMessages = await login();
@@ -348,8 +345,8 @@ class UgrsSpider implements Spider {
         _username.length >= 3 ? _username.substring(1, 3) : '';
     final parsedEnrollmentYear = int.tryParse(enrollmentDigits);
     if (parsedEnrollmentYear == null) {
-      return Tuple7(loginErrorMessages, <String?>['无法解析学号中的入学年份：$_username'],
-          outSemesters, outGrades, outMajorGrade, outSpecialDates, outTodos);
+      return Tuple6(loginErrorMessages, <String?>['无法解析学号中的入学年份：$_username'],
+          outSemesters, outGrades, outSpecialDates, outTodos);
     }
     var yearEnroll = parsedEnrollmentYear + 2000;
     var yearGraduate = yearEnroll + 7;
@@ -688,23 +685,6 @@ class UgrsSpider implements Spider {
     }).catchError((Object error, StackTrace stackTrace) =>
             _describeRefreshFailure(error, stackTrace)));
 
-    fetches.add(_fetchWithRetry(() => _zdbk.getMajorGrade(_httpClient))
-        .then((value) {
-      outMajorGrade.clear();
-      outMajorGrade.addAll(value.item2.item1);
-
-      final payload = decodeJsonMap(value.item2.item2, context: '教务网主修成绩响应');
-      majorCourseIds = (asDynamicList(payload['items']) ?? const [])
-          .map(asStringMap)
-          .whereType<Map<String, dynamic>>()
-          .map((item) => asString(item['xkkh']))
-          .whereType<String>()
-          .toSet();
-
-      return value.item1?.toString();
-    }).catchError((Object error, StackTrace stackTrace) =>
-            _describeRefreshFailure(error, stackTrace)));
-
     // 作业（学在浙大）- 加上重试包装
     fetches.add(_fetchWithRetry(() => _courses.getTodo(_httpClient))
         .then((value) {
@@ -776,7 +756,6 @@ class UgrsSpider implements Spider {
           loginErrorMessages: loginErrorMessages,
           semesters: outSemesters,
           grades: outGrades,
-          majorGrade: outMajorGrade,
           specialDates: outSpecialDates,
           todos: outTodos,
           onProgress: onProgress);
@@ -788,12 +767,6 @@ class UgrsSpider implements Spider {
           e.sessions.isEmpty &&
           e.exams.isEmpty &&
           e.courses.isEmpty);
-
-      for (var grade in outGrades) {
-        if (majorCourseIds.contains(grade.id)) {
-          grade.major = true;
-        }
-      }
     });
 
     if (fetchErrorMessages.every((e) => e == null)) {
@@ -834,8 +807,8 @@ class UgrsSpider implements Spider {
       }
     }
 
-    return Tuple7(loginErrorMessages, fetchErrorMessages, outSemesters,
-        outGrades, outMajorGrade, outSpecialDates, outTodos);
+    return Tuple6(loginErrorMessages, fetchErrorMessages, outSemesters,
+        outGrades, outSpecialDates, outTodos);
   }
 }
 
@@ -855,7 +828,7 @@ class MockSpider extends UgrsSpider {
   Future<EverythingTuple> getEverything(
       {void Function(EverythingTuple partial)? onProgress}) async {
     await Future.delayed(const Duration(seconds: 2));
-    return Tuple7(
+    return Tuple6(
         [null, null],
         [null, null, null, null, null, null],
         [
@@ -868,7 +841,6 @@ class MockSpider extends UgrsSpider {
             .whereType<Map<String, dynamic>>()
             .map(Grade.fromJson)
             .toList(),
-        [4.631297709923665, 131.0],
         {},
         Todo.getAllFromCourses((jsonDecode(
             '{"todo_list":[{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T06:00:00Z","id":908844,"is_locked":false,"is_student":true,"prerequisites":[],"title":"Project-资料","type":"homework"},{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T04:50:00Z","id":924799,"is_locked":false,"is_student":true,"prerequisites":[],"title":"实验四","type":"homework"},{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T04:53:00Z","id":924802,"is_locked":false,"is_student":true,"prerequisites":[],"title":"作业三","type":"homework"},{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T05:13:00Z","id":929150,"is_locked":false,"is_student":true,"prerequisites":[],"title":"实验五","type":"homework"},{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T05:18:00Z","id":929152,"is_locked":false,"is_student":true,"prerequisites":[],"title":"实验六","type":"homework"},{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T05:20:00Z","id":929153,"is_locked":false,"is_student":true,"prerequisites":[],"title":"作业四","type":"homework"},{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T05:21:00Z","id":929154,"is_locked":false,"is_student":true,"prerequisites":[],"title":"作业五","type":"homework"},{"course_code":"(2024-2025-1)-21121340-0018181-1A","course_id":74393,"course_name":"计算机网络","course_type":1,"end_time":"2025-02-01T11:50:00Z","id":933292,"is_locked":false,"is_student":true,"prerequisites":[],"title":"期末project-提交通道","type":"homework"},{"course_code":"(2024-2025-1)-21192040-0001038-1A","course_id":74535,"course_name":"量子计算理论基础与软件系统","course_type":1,"end_time":"2025-01-09T15:59:00Z","id":928371,"is_locked":false,"is_student":true,"prerequisites":[],"title":"期末大作业","type":"homework"},{"course_code":"(2024-2025-1)-21121500-0003412-1","course_id":78036,"course_name":"优化基本理论与方法","course_type":1,"end_time":"2025-01-18T15:59:00Z","id":932896,"is_locked":false,"is_student":true,"prerequisites":[],"title":"Final Report","type":"homework"}]}'))));

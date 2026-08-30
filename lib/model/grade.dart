@@ -9,7 +9,6 @@ class Grade {
   late double fourPoint; // 四分制成绩（4.3 满分）
   late double fourPointLegacy; // 原始的四分制成绩
   late int hundredPoint; // 百分制成绩
-  bool major = false; // 计入主修
   bool? isOnline = false; // grs成绩使用这个字段标志是不是线上上课(hack)
   // 计入GPA（弃修、待录、缓考、二级制的不计）
   late bool gpaIncluded;
@@ -72,7 +71,7 @@ class Grade {
         original = "",
         fivePoint = 0.0;
 
-  // 从所有成绩查询处爬取，因此不含主修标记
+  // 从所有成绩查询处爬取
   factory Grade(Map<String, dynamic> json) {
     final id = asString(json['xkkh']);
     if (id == null || id.isEmpty) {
@@ -104,12 +103,6 @@ class Grade {
         original != "合格" &&
         original != "不合格" &&
         !id.contains('xtwkc');
-  }
-
-  // 从主修成绩查询处爬取，因此打上主修标记
-  factory Grade.fromMajor(Map<String, dynamic> json) {
-    final grade = Grade(json)..major = true;
-    return grade;
   }
 
   Map<String, dynamic> toJson() => {

@@ -104,51 +104,6 @@ class GradeDetailPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Obx(() => TwoLineCard(
-                                title: '学年主修学分',
-                                content: _gradeDetailController
-                                    .getYearMajorGpa(_gradeDetailController
-                                        .semesterIndex.value)
-                                    .item2
-                                    .toStringAsFixed(1),
-                                backgroundColor:
-                                    CustomCupertinoDynamicColors.peach)),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Obx(() => TwoLineCard(
-                                title: '学年主修均绩',
-                                content: _gradeDetailController
-                                    .getYearMajorGpa(_gradeDetailController
-                                        .semesterIndex.value)
-                                    .item1[0]
-                                    .toStringAsFixed(2),
-                                backgroundColor:
-                                    CustomCupertinoDynamicColors.cyan)),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Obx(() => TwoLineCard(
-                                title: '学年主修四分制',
-                                content: _gradeDetailController
-                                    .getYearMajorGpa(_gradeDetailController
-                                        .semesterIndex.value)
-                                    .item1[1]
-                                    .toStringAsFixed(2),
-                                extraContent: _gradeDetailController
-                                    .getYearMajorGpa(_gradeDetailController
-                                        .semesterIndex.value)
-                                    .item1[2]
-                                    .toStringAsFixed(2),
-                                backgroundColor:
-                                    CustomCupertinoDynamicColors.spring)),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),

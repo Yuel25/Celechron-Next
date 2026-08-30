@@ -82,7 +82,8 @@ void main() {
     );
     expect(degraded.severity, DiagnosticReportSeverity.degraded);
     expect(moduleByName(degraded, '课表').state, DiagnosticModuleState.cache);
-    expect(moduleByName(degraded, '主修').state, DiagnosticModuleState.cache);
+    expect(
+        moduleByName(degraded, '实践/素质拓展').state, DiagnosticModuleState.cache);
 
     final failedLog = [
       diagnosticLine(
@@ -373,7 +374,7 @@ void main() {
     );
     expect(issue.title, 'App 未正确处理空字段');
     expect(issue.details.exceptionType, '_TypeError');
-    expect(issue.details.stack, contains('zdbk.dart:373'));
+    expect(issue.details.stack, contains('sztz.dart:214'));
   });
 
   test('缓存更新时间进入模块报告', () {

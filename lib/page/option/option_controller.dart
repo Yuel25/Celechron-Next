@@ -10,7 +10,6 @@ import 'package:celechron/model/scholar.dart';
 import 'package:celechron/model/option.dart';
 import 'package:celechron/services/diagnostic_log_service.dart';
 import 'package:celechron/database/database_helper.dart';
-import 'package:celechron/worker/ecard_widget_messenger.dart';
 import 'package:celechron/worker/fuse.dart';
 import 'package:celechron/worker/background_app_refresh.dart';
 import 'package:celechron/utils/platform_features.dart';
@@ -220,13 +219,19 @@ class OptionController extends GetxController {
 
   String get celechronVersion => _fuse.value.displayVersion;
 
+  String get celechronBuildNumber => _fuse.value.build.toString();
+
   bool get hasNewVersion => _fuse.value.hasNewVersion;
 
   Future<void> logout() async {
     await scholar.value.logout();
     scholar.refresh();
     pushOnGradeChange = false;
-    ECardWidgetMessenger.logout();
+    // 清理历史版本校园卡小组件遗留的凭据
+    await _db.secureStorage.delete(
+        key: 'synjonesAuth', iOptions: secureStorageIOSOptions);
+    await _db.secureStorage.delete(
+        key: 'eCardAccount', iOptions: secureStorageIOSOptions);
   }
 
   /// calendar_to_ical.dart: 显示导出课程表对话框

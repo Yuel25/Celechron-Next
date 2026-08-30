@@ -5,9 +5,9 @@ import 'package:celechron/model/grade.dart';
 import 'package:celechron/model/semester.dart';
 import 'package:celechron/model/todo.dart';
 
-/// getEverything 的返回值：登录错误、抓取错误、学期、成绩、主修成绩、特殊日期、作业
-typedef EverythingTuple = Tuple7<List<String?>, List<String?>, List<Semester>,
-    List<Grade>, List<double>, Map<DateTime, String>, List<Todo>>;
+/// getEverything 的返回值：登录错误、抓取错误、学期、成绩、特殊日期、作业
+typedef EverythingTuple = Tuple6<List<String?>, List<String?>, List<Semester>,
+    List<Grade>, Map<DateTime, String>, List<Todo>>;
 
 /// 单个抓取模块的状态（供刷新状态文案使用）
 enum FetchModuleState { pending, success, failed }
@@ -74,7 +74,6 @@ void attachEverythingProgress({
   required List<String?> loginErrorMessages,
   required List<Semester> semesters,
   required List<Grade> grades,
-  required List<double> majorGrade,
   required Map<DateTime, String> specialDates,
   required List<Todo> todos,
   required void Function(EverythingTuple partial) onProgress,
@@ -103,7 +102,7 @@ void attachEverythingProgress({
           partialErrors[timetableIndex] = '课表查询进行中';
         }
       }
-      onProgress(Tuple7(
+      onProgress(Tuple6(
           loginErrorMessages,
           partialErrors,
           semestersReady
@@ -116,7 +115,6 @@ void attachEverythingProgress({
                   .toList()
               : <Semester>[],
           grades,
-          majorGrade,
           calendarReady ? specialDates : <DateTime, String>{},
           todos));
     });

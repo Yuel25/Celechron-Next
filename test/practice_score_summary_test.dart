@@ -65,7 +65,6 @@ void _applyPractice(Scholar scholar, PracticeScoreSnapshot snapshot) {
     const [],
     const [],
     {},
-    const [],
     {},
     const [],
     snapshot,

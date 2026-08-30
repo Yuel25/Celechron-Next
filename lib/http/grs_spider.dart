@@ -279,7 +279,6 @@ class GrsSpider implements Spider {
     // 返回值初始化
     var outSemesters = <Semester>[];
     var outGrades = <Grade>[];
-    var outMajorGrade = <double>[];
     var outSpecialDates = <DateTime, String>{};
     var outTodos = <Todo>[];
     var loginErrorMessages = <String?>[null, null, null];
@@ -296,8 +295,8 @@ class GrsSpider implements Spider {
         _username.length >= 3 ? _username.substring(1, 3) : '';
     final parsedEnrollmentYear = int.tryParse(enrollmentDigits);
     if (parsedEnrollmentYear == null) {
-      return Tuple7(loginErrorMessages, <String?>['无法解析学号中的入学年份：$_username'],
-          outSemesters, outGrades, outMajorGrade, outSpecialDates, outTodos);
+      return Tuple6(loginErrorMessages, <String?>['无法解析学号中的入学年份：$_username'],
+          outSemesters, outGrades, outSpecialDates, outTodos);
     }
     var yearEnroll = parsedEnrollmentYear + 2000;
     // 假设研究生在本科时提前两年选了研究生的课
@@ -653,7 +652,6 @@ class GrsSpider implements Spider {
           loginErrorMessages: loginErrorMessages,
           semesters: outSemesters,
           grades: outGrades,
-          majorGrade: outMajorGrade,
           specialDates: outSpecialDates,
           todos: outTodos,
           onProgress: onProgress);
@@ -707,7 +705,7 @@ class GrsSpider implements Spider {
       }
     }
 
-    return Tuple7(loginErrorMessages, fetchErrorMessages, outSemesters,
-        outGrades, outMajorGrade, outSpecialDates, outTodos);
+    return Tuple6(loginErrorMessages, fetchErrorMessages, outSemesters,
+        outGrades, outSpecialDates, outTodos);
   }
 }
