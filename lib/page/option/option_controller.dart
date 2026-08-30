@@ -228,10 +228,10 @@ class OptionController extends GetxController {
     scholar.refresh();
     pushOnGradeChange = false;
     // 清理历史版本校园卡小组件遗留的凭据
-    await _db.secureStorage.delete(
-        key: 'synjonesAuth', iOptions: secureStorageIOSOptions);
-    await _db.secureStorage.delete(
-        key: 'eCardAccount', iOptions: secureStorageIOSOptions);
+    await _db.secureStorage
+        .delete(key: 'synjonesAuth', iOptions: secureStorageIOSOptions);
+    await _db.secureStorage
+        .delete(key: 'eCardAccount', iOptions: secureStorageIOSOptions);
   }
 
   /// calendar_to_ical.dart: 显示导出课程表对话框

@@ -423,8 +423,7 @@ class OptionPage extends StatelessWidget {
                         CupertinoPageRoute(
                           builder: (context) => DiagnosticLogPage(
                             version: _optionController.celechronVersion,
-                            buildNumber:
-                                _optionController.celechronBuildNumber,
+                            buildNumber: _optionController.celechronBuildNumber,
                           ),
                         ),
                       );

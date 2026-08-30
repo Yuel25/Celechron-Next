@@ -375,8 +375,8 @@ class Scholar {
       tempPracticeSnapshot = (_spider as UgrsSpider).practiceSnapshot;
     }
 
-    setScholar(value.item2, value.item3, tempGrades, value.item5,
-        value.item6, tempPracticeSnapshot);
+    setScholar(value.item2, value.item3, tempGrades, value.item5, value.item6,
+        tempPracticeSnapshot);
 
     // 保研成绩，只取第一次
     var netGrades = grades.values.map((e) => e.first);

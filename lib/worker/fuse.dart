@@ -79,7 +79,8 @@ class Fuse {
       ];
       remoteBuild = match.group(4) != null ? int.parse(match.group(4)!) : 0;
 
-      hasNewVersion = _compareVersion((release['prerelease'] as bool?) ?? false);
+      hasNewVersion =
+          _compareVersion((release['prerelease'] as bool?) ?? false);
       lastUpdateTime = DateTime.now();
       await _db.setFuse(this);
 
