@@ -5,11 +5,14 @@ import 'package:get/get.dart';
 import 'package:celechron/database/database_helper.dart';
 
 class Fuse {
+  static List<int> _packageVersion = const [0, 0, 0];
+  static int _packageBuild = 0;
+
   late DateTime lastUpdateTime;
 
   final bool isBeta = false;
-  final version = [1, 3, 0];
-  final build = 1;
+  List<int> get version => _packageVersion;
+  int get build => _packageBuild;
   List<int>? remoteVersion;
   int? remoteBuild;
   bool hasNewVersion = false;
@@ -18,6 +21,25 @@ class Fuse {
   final DatabaseHelper _db = Get.find<DatabaseHelper>(tag: 'db');
 
   String get displayVersion => version.join('.') + (isBeta ? ' beta' : '');
+
+  static void configurePackageVersion({
+    required String version,
+    required String buildNumber,
+  }) {
+    final parsedVersion = version.split('.').map(int.tryParse).toList();
+    if (parsedVersion.length != 3 ||
+        parsedVersion.any((part) => part == null)) {
+      throw FormatException('Invalid package version: $version');
+    }
+
+    final parsedBuild = int.tryParse(buildNumber);
+    if (parsedBuild == null) {
+      throw FormatException('Invalid package build number: $buildNumber');
+    }
+
+    _packageVersion = parsedVersion.cast<int>();
+    _packageBuild = parsedBuild;
+  }
 
   Fuse() {
     lastUpdateTime = DateTime(2001, 1, 1);

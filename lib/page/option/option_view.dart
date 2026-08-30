@@ -58,6 +58,7 @@ class OptionPage extends StatelessWidget {
               largeTitle: Text('设置'),
               backgroundColor: CupertinoColors.systemGroupedBackground,
               border: null,
+              stretch: true,
             ),
             // 教务
             Obx(() => SliverToBoxAdapter(
@@ -543,7 +544,7 @@ class OptionPage extends StatelessWidget {
   }
 
   static const _defaultMargin =
-      EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 10.0);
+      EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 14.0);
 }
 
 class BackChervonRow extends StatelessWidget {

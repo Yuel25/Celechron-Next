@@ -2,27 +2,28 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 
+import 'package:celechron/design/app_visual.dart';
+
 class RoundRectangleCard extends StatefulWidget {
   final Widget child;
   final Function()? onTap;
   final bool animate;
   final List<BoxShadow> boxShadow;
   final EdgeInsets padding;
+  final Color? color;
+  final Border? border;
+  final double borderRadius;
 
   const RoundRectangleCard({
     super.key,
     required this.child,
     this.onTap,
     this.animate = true,
-    this.padding = const EdgeInsets.all(12),
-    this.boxShadow = const [
-      BoxShadow(
-        color: CupertinoColors.systemGrey5,
-        spreadRadius: 0,
-        blurRadius: 12,
-        offset: Offset(0, 6),
-      ),
-    ],
+    this.padding = const EdgeInsets.all(AppVisual.cardPadding),
+    this.color,
+    this.border,
+    this.borderRadius = AppVisual.cardRadius,
+    this.boxShadow = AppVisual.surfaceShadow,
   });
 
   @override
@@ -40,10 +41,10 @@ class _RoundRectangleCardState extends State<RoundRectangleCard>
     if (widget.animate) {
       _animationController = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 200),
-        reverseDuration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 140),
+        reverseDuration: const Duration(milliseconds: 160),
       );
-      _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
+      _scaleAnimation = Tween<double>(begin: 1, end: 0.98).animate(
         CurvedAnimation(
           parent: _animationController,
           curve: Curves.easeInOut,
@@ -84,12 +85,16 @@ class _RoundRectangleCardState extends State<RoundRectangleCard>
         //         : widget.boxShadow),
         // 修改了颜色控制逻辑，应该跟随应用设置而非系统设置
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          border: widget.border,
           boxShadow: brightness == Brightness.dark ? null : widget.boxShadow,
-          color: brightness == Brightness.dark
-              ? CupertinoDynamicColor.resolve(
-                  CupertinoColors.secondarySystemBackground, context)
-              : CupertinoDynamicColor.resolve(CupertinoColors.white, context),
+          color: widget.color == null
+              ? brightness == Brightness.dark
+                  ? CupertinoDynamicColor.resolve(
+                      CupertinoColors.secondarySystemBackground, context)
+                  : CupertinoDynamicColor.resolve(
+                      CupertinoColors.white, context)
+              : CupertinoDynamicColor.resolve(widget.color!, context),
         ),
         child: widget.child);
     return widget.animate

@@ -10,20 +10,29 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:app_links/app_links.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:celechron/model/scholar.dart';
+import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/model/option.dart';
 import 'package:celechron/page/home_page.dart';
 import 'package:celechron/page/option/ecard_pay_page.dart';
 import 'package:celechron/services/diagnostic_log_service.dart';
 import 'package:celechron/services/refresh_coordinator.dart';
 import 'package:celechron/worker/ecard_widget_messenger.dart';
+import 'package:celechron/worker/fuse.dart';
 import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/utils/global.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   ECardWidgetMessenger.installNativeHandler();
+
+  final packageInfo = await PackageInfo.fromPlatform();
+  Fuse.configurePackageVersion(
+    version: packageInfo.version,
+    buildNumber: packageInfo.buildNumber,
+  );
 
   // 尽可能早地声明前台活跃，Workmanager isolate 会据此安全让行。
   await RefreshCoordinator.setForegroundActive(true);
@@ -151,8 +160,9 @@ class _CelechronAppState extends State<CelechronApp>
                 : brightnessMode.value == BrightnessMode.dark
                     ? Brightness.dark
                     : Brightness.light,
-            scaffoldBackgroundColor: CupertinoColors.systemBackground,
-            barBackgroundColor: CupertinoColors.systemBackground,
+            scaffoldBackgroundColor: CupertinoColors.systemGroupedBackground,
+            barBackgroundColor: CupertinoColors.systemGroupedBackground,
+            primaryColor: AppVisual.brand,
           ),
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,

@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
+import 'package:celechron/design/app_visual.dart';
+
 class TwoLineCard extends StatefulWidget {
   final String title;
   final String content;
@@ -46,10 +48,10 @@ class _TwoLineCardState extends State<TwoLineCard>
     if (widget.animate) {
       _animationController = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 200),
-        reverseDuration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 140),
+        reverseDuration: const Duration(milliseconds: 160),
       );
-      _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
+      _scaleAnimation = Tween<double>(begin: 1, end: 0.98).animate(
         CurvedAnimation(
           parent: _animationController,
           curve: Curves.easeInOut,
@@ -124,20 +126,14 @@ class _TwoLineCardState extends State<TwoLineCard>
     var core = Container(
       height: widget.height,
       width: widget.width,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppVisual.cardPadding),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppVisual.cardRadius),
         color: brightness == Brightness.dark
             ? CupertinoColors.secondarySystemFill
             : CupertinoDynamicColor.resolve(widget.backgroundColor, context),
         // boxShadow
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.05),
-            offset: Offset(0, 2),
-            blurRadius: 4,
-          ),
-        ],
+        boxShadow: AppVisual.surfaceShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

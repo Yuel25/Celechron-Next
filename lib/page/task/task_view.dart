@@ -5,6 +5,7 @@ import 'package:celechron/utils/utils.dart';
 import 'package:celechron/design/sub_title.dart';
 import 'package:celechron/design/round_rectangle_card.dart';
 import 'package:celechron/design/custom_colors.dart';
+import 'package:celechron/design/app_empty_state.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:celechron/model/task.dart';
@@ -182,7 +183,7 @@ class TaskPage extends StatelessWidget {
       children: [
         title == null
             ? const SizedBox(height: 0)
-            : SubtitleRow(subtitle: title),
+            : SubtitleRow(subtitle: title, padHorizontal: 0),
         Dismissible(
           key: Key(deadline.uid),
           direction: deadline.type == TaskType.deadline
@@ -341,22 +342,41 @@ class TaskPage extends StatelessWidget {
                       // 固定日程的状态随时间翻转；taskList 不再每秒通知，改由 timeNow 驱动
                       Obx(() {
                         final now = _flowController.timeNow.value;
-                        return Text(
-                            deadline.type == TaskType.deadline
-                                ? deadlineStatusName[deadline.status]!
-                                : (now.isBefore(deadline.startTime)
-                                    ? '未开始'
-                                    : (!now.isBefore(deadline.endTime)
-                                        ? '已结束'
-                                        : '进行中')),
-                            style: CupertinoTheme.of(context)
-                                .textTheme
-                                .textStyle
-                                .copyWith(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  overflow: TextOverflow.ellipsis,
-                                ));
+                        final label = deadline.type == TaskType.deadline
+                            ? deadlineStatusName[deadline.status]!
+                            : (now.isBefore(deadline.startTime)
+                                ? '未开始'
+                                : (!now.isBefore(deadline.endTime)
+                                    ? '已结束'
+                                    : '进行中'));
+                        final statusColor = CupertinoDynamicColor.resolve(
+                          deadline.status == TaskStatus.failed
+                              ? AppSemanticColors.danger
+                              : deadline.status == TaskStatus.completed
+                                  ? AppSemanticColors.success
+                                  : deadline.status == TaskStatus.suspended
+                                      ? AppSemanticColors.warning
+                                      : color,
+                          context,
+                        );
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.13),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
                       }),
                     ],
                   ),
@@ -620,25 +640,27 @@ class TaskPage extends StatelessWidget {
                 ],
               ),
             ),
-            if (_taskController.todoDeadlineList.isEmpty &&
-                _taskController.doneDeadlineList.isEmpty &&
-                _taskController.fixedDeadlineList.isEmpty)
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 500,
-                  child: Column(
-                    children: [
-                      const Spacer(),
-                      Text(
-                        '没有任务',
-                        style: CupertinoTheme.of(context).textTheme.textStyle,
-                        textAlign: TextAlign.center,
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                ),
-              ),
+            Obx(() {
+              final isEmpty = _taskController.todoDeadlineList.isEmpty &&
+                  _taskController.doneDeadlineList.isEmpty &&
+                  _taskController.fixedDeadlineList.isEmpty;
+              return SliverToBoxAdapter(
+                child: isEmpty
+                    ? AppEmptyState(
+                        icon: CupertinoIcons.check_mark_circled,
+                        title: '还没有任务',
+                        message: '添加一个 DDL 或固定日程，Celechron 会帮你安排时间。',
+                        actionLabel: '添加任务',
+                        onAction: () async {
+                          await newDeadline(context);
+                          _taskController.updateDeadlineList();
+                          _taskController.taskList.refresh();
+                        },
+                        minHeight: MediaQuery.sizeOf(context).height * 0.58,
+                      )
+                    : const SizedBox.shrink(),
+              );
+            }),
             Obx(
               () => SliverList(
                 delegate: SliverChildBuilderDelegate(
@@ -653,8 +675,11 @@ class TaskPage extends StatelessWidget {
                       child: createCard(
                           context,
                           _taskController.todoDeadlineList[index],
-                          UidColors.colorFromUid(
-                              _taskController.todoDeadlineList[index].uid),
+                          CupertinoDynamicColor.resolve(
+                            UidColors.colorFromUid(
+                                _taskController.todoDeadlineList[index].uid),
+                            context,
+                          ),
                           index == 0 ? '待办' : null),
                     );
                   },
@@ -676,8 +701,11 @@ class TaskPage extends StatelessWidget {
                       child: createCard(
                           context,
                           _taskController.doneDeadlineList[index],
-                          UidColors.colorFromUid(
-                              _taskController.doneDeadlineList[index].uid),
+                          CupertinoDynamicColor.resolve(
+                            UidColors.colorFromUid(
+                                _taskController.doneDeadlineList[index].uid),
+                            context,
+                          ),
                           index == 0 ? '已完成' : null),
                     );
                   },
@@ -699,8 +727,11 @@ class TaskPage extends StatelessWidget {
                       child: createCard(
                           context,
                           _taskController.fixedDeadlineList[index],
-                          UidColors.colorFromUid(
-                              _taskController.fixedDeadlineList[index].uid),
+                          CupertinoDynamicColor.resolve(
+                            UidColors.colorFromUid(
+                                _taskController.fixedDeadlineList[index].uid),
+                            context,
+                          ),
                           index == 0 ? '日程列表' : null),
                     );
                   },

@@ -181,23 +181,32 @@ class _CreditsPageState extends State<CreditsPage> {
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 32),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      verticalDirection: VerticalDirection.down,
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            'nosig',
-                            textAlign: TextAlign.center,
-                          ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisSize: MainAxisSize.max,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          verticalDirection: VerticalDirection.down,
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                'nosig',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '空之探险队的 Kate',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          child: Text(
-                            '空之探险队的 Kate',
-                            textAlign: TextAlign.center,
-                          ),
+                        SizedBox(height: 12),
+                        Text(
+                          'Yuel25',
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),

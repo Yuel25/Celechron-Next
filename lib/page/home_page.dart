@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
-import 'package:flutter/material.dart' show Icons;
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -9,6 +8,7 @@ import 'package:celechron/page/flow/flow_view.dart';
 import 'package:celechron/page/task/task_view.dart';
 import 'package:celechron/page/calendar/calendar_view.dart';
 import 'package:celechron/page/option/option_view.dart';
+import 'package:celechron/design/app_visual.dart';
 
 import 'package:celechron/worker/fuse.dart';
 
@@ -50,6 +50,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final tabBar = CupertinoTabBar(
       iconSize: 26,
+      activeColor: AppVisual.brand,
+      inactiveColor: CupertinoColors.secondaryLabel,
       backgroundColor: CupertinoDynamicColor.resolve(
               CupertinoColors.secondarySystemBackground, context)
           .withValues(alpha: 0.5),
@@ -67,7 +69,7 @@ class _HomePageState extends State<HomePage> {
           label: '任务',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.school_rounded),
+          icon: Icon(CupertinoIcons.book),
           label: '学业',
         ),
         BottomNavigationBarItem(

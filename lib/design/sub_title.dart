@@ -21,20 +21,24 @@ class SubtitleRow extends StatelessWidget {
     return Padding(
         padding: EdgeInsets.symmetric(horizontal: padHorizontal),
         child: Row(children: [
-          Container(
-              alignment: Alignment.centerLeft,
-              padding: EdgeInsets.symmetric(vertical: padVertical),
-              child: Hero(
-                tag: heroTag,
-                child: Text(
-                  subtitle,
-                  style: CupertinoTheme.of(context)
-                      .textTheme
-                      .navLargeTitleTextStyle
-                      .copyWith(fontSize: fontSize),
-                ),
-              )),
-          const Spacer(),
+          Expanded(
+            child: Container(
+                alignment: Alignment.centerLeft,
+                padding: EdgeInsets.symmetric(vertical: padVertical),
+                child: Hero(
+                  tag: heroTag,
+                  child: Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: CupertinoTheme.of(context)
+                        .textTheme
+                        .navLargeTitleTextStyle
+                        .copyWith(fontSize: fontSize),
+                  ),
+                )),
+          ),
+          const SizedBox(width: 8),
           right == null ? const SizedBox(height: 0) : right!,
         ]));
   }
@@ -54,20 +58,24 @@ class SubSubtitleRow extends StatelessWidget {
     return Padding(
         padding: EdgeInsets.symmetric(horizontal: padHorizontal),
         child: Row(children: [
-          Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Hero(
-                tag: heroTag,
-                child: Text(
-                  subtitle,
-                  style: CupertinoTheme.of(context)
-                      .textTheme
-                      .navLargeTitleTextStyle
-                      .copyWith(fontSize: 18),
-                ),
-              )),
-          const Spacer(),
+          Expanded(
+            child: Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Hero(
+                  tag: heroTag,
+                  child: Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: CupertinoTheme.of(context)
+                        .textTheme
+                        .navLargeTitleTextStyle
+                        .copyWith(fontSize: 18),
+                  ),
+                )),
+          ),
+          const SizedBox(width: 8),
           right == null ? const SizedBox(height: 0) : right!,
         ]));
   }

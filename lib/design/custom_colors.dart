@@ -1,55 +1,70 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 class UidColors {
   static Color colorFromUid(String? uid) {
     int value = (uid ?? '').hashCode;
-    return HSLColor.fromAHSL(
-            1.0,
-            (20 + (value * 19 + 133) % 310),
-            (80 + (value * 17 + 155) % 20) / 100.00,
-            (60 + (value * 13 + 494) % 20) / 100.00)
-        .toColor();
+    final hue = (20 + (value * 19 + 133) % 310).toDouble();
+    return CupertinoDynamicColor.withBrightness(
+      color: HSLColor.fromAHSL(1, hue, 0.66, 0.47).toColor(),
+      darkColor: HSLColor.fromAHSL(1, hue, 0.7, 0.68).toColor(),
+    );
   }
+}
+
+abstract final class AppSemanticColors {
+  static const courseMorning = CupertinoColors.systemRed;
+  static const courseForenoon = CupertinoColors.systemOrange;
+  static const courseNoon = CupertinoColors.systemYellow;
+  static const courseAfternoon = CupertinoColors.systemGreen;
+  static const courseEvening = CupertinoColors.systemBlue;
+  static const courseNight = CupertinoColors.systemPurple;
+
+  static const exam = CupertinoColors.systemPink;
+  static const focus = CupertinoColors.systemIndigo;
+  static const schedule = CupertinoColors.systemTeal;
+  static const success = CupertinoColors.systemGreen;
+  static const warning = CupertinoColors.systemOrange;
+  static const danger = CupertinoColors.systemRed;
+  static const neutral = CupertinoColors.systemGrey;
 }
 
 class TimeColors {
   static Color colorFromHour(int hour) {
-    Color color = Colors.red;
+    Color color = AppSemanticColors.courseMorning;
     if (hour <= 8) {
-      color = Colors.red;
+      color = AppSemanticColors.courseMorning;
     } else if (hour >= 9 && hour <= 12) {
-      color = Colors.amber;
+      color = AppSemanticColors.courseForenoon;
     } else if (hour == 13) {
-      color = const Color.fromARGB(255, 163, 232, 0);
+      color = AppSemanticColors.courseNoon;
     } else if (hour >= 14 && hour <= 15) {
-      color = Colors.green;
+      color = AppSemanticColors.courseAfternoon;
     } else if (hour >= 16 && hour <= 17) {
-      color = Colors.lightBlue;
+      color = AppSemanticColors.schedule;
     } else if (hour >= 18 && hour <= 19) {
-      color = const Color.fromARGB(255, 38, 0, 255);
+      color = AppSemanticColors.courseEvening;
     } else if (hour >= 20) {
-      color = const Color.fromARGB(255, 195, 0, 255);
+      color = AppSemanticColors.courseNight;
     }
     return color;
   }
 
   static Color colorFromClass(int number) {
-    Color color = Colors.red;
+    Color color = AppSemanticColors.courseMorning;
     if (number <= 1) {
-      color = Colors.red;
+      color = AppSemanticColors.courseMorning;
     } else if (number >= 2 && number <= 5) {
-      color = Colors.amber;
+      color = AppSemanticColors.courseForenoon;
     } else if (number == 6) {
-      color = const Color.fromARGB(255, 163, 232, 0);
+      color = AppSemanticColors.courseNoon;
     } else if (number >= 7 && number <= 8) {
-      color = Colors.green;
+      color = AppSemanticColors.courseAfternoon;
     } else if (number >= 9 && number <= 10) {
-      color = Colors.lightBlue;
+      color = AppSemanticColors.schedule;
     } else if (number >= 11 && number <= 12) {
-      color = const Color.fromARGB(255, 38, 0, 255);
+      color = AppSemanticColors.courseEvening;
     } else if (number >= 13) {
-      color = const Color.fromARGB(255, 195, 0, 255);
+      color = AppSemanticColors.courseNight;
     }
     return color;
   }

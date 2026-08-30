@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:celechron/design/custom_colors.dart';
 import 'package:celechron/design/custom_decoration.dart';
+import 'package:celechron/design/app_empty_state.dart';
 import 'package:celechron/utils/time_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -21,21 +22,57 @@ class FlowPage extends StatelessWidget {
   final _flowController = Get.put(FlowController());
   final db = Get.find<DatabaseHelper>(tag: 'db');
 
+  Color _periodColor(BuildContext context, Period period) {
+    Color color;
+    if (period.type == PeriodType.flow) {
+      color = AppSemanticColors.focus;
+    } else if (period.type == PeriodType.user) {
+      color = AppSemanticColors.schedule;
+    } else if (period.type == PeriodType.test) {
+      color = AppSemanticColors.exam;
+    } else if (period.type == PeriodType.classes) {
+      color = TimeColors.colorFromHour(period.startTime.hour);
+    } else {
+      color = AppSemanticColors.neutral;
+    }
+    return CupertinoDynamicColor.resolve(color, context);
+  }
+
+  String _periodTypeLabel(PeriodType type) => switch (type) {
+        PeriodType.classes => '课程',
+        PeriodType.test => '考试',
+        PeriodType.user => '日程',
+        PeriodType.flow => '专注',
+        PeriodType.virtual => '空闲',
+      };
+
   Widget createFirst(context, Period period, String? title) {
-    Color themeColor =
-        (period.type == PeriodType.flow || period.type == PeriodType.user
-            ? UidColors.colorFromUid(period.fromUid)
-            : period.type == PeriodType.test
-                ? CupertinoColors.systemPink
-                : (period.type == PeriodType.classes
-                    ? TimeColors.colorFromHour(period.startTime.hour)
-                    : CupertinoColors.systemTeal));
+    final themeColor = _periodColor(context, period);
+    final brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
     return Column(
       children: [
         title == null
             ? const SizedBox(height: 0)
-            : SubtitleRow(subtitle: title),
+            : SubtitleRow(subtitle: title, padHorizontal: 0),
         RoundRectangleCard(
+          borderRadius: 16,
+          color: themeColor.withValues(
+            alpha: brightness == Brightness.dark ? 0.16 : 0.08,
+          ),
+          border: Border.all(
+            color: themeColor.withValues(
+              alpha: brightness == Brightness.dark ? 0.42 : 0.22,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: themeColor.withValues(alpha: 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          padding: const EdgeInsets.all(16),
           onTap: period.type == PeriodType.classes
               ? () async => Navigator.of(context, rootNavigator: true).push(
                   CupertinoPageRoute(
@@ -71,6 +108,25 @@ class FlowPage extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: themeColor.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            _periodTypeLabel(period.type),
+                            style: TextStyle(
+                              color: themeColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ]),
@@ -242,14 +298,20 @@ class FlowPage extends StatelessWidget {
                                   height: 8,
                                   width: _flowController.isDuringFlow
                                       ? (max(
-                                          (constraints.maxWidth) *
-                                              _flowController.timeNow.value
-                                                  .difference(period.startTime)
-                                                  .inMilliseconds /
-                                              period.endTime
-                                                  .difference(period.startTime)
-                                                  .inMilliseconds,
-                                          0.0))
+                                              (constraints.maxWidth) *
+                                                  _flowController.timeNow.value
+                                                      .difference(
+                                                          period.startTime)
+                                                      .inMilliseconds /
+                                                  period.endTime
+                                                      .difference(
+                                                          period.startTime)
+                                                      .inMilliseconds,
+                                              0.0)
+                                          .clamp(
+                                          0.0,
+                                          constraints.maxWidth,
+                                        ))
                                       : (constraints.maxWidth),
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -270,19 +332,12 @@ class FlowPage extends StatelessWidget {
   }
 
   Widget createCard(context, Period period, String? title) {
-    Color themeColor =
-        (period.type == PeriodType.flow || period.type == PeriodType.user
-            ? UidColors.colorFromUid(period.fromUid)
-            : period.type == PeriodType.test
-                ? CupertinoColors.systemPink
-                : (period.type == PeriodType.classes
-                    ? TimeColors.colorFromHour(period.startTime.hour)
-                    : CupertinoColors.systemTeal));
+    final themeColor = _periodColor(context, period);
     return Column(
       children: [
         title == null
             ? const SizedBox(height: 0)
-            : SubtitleRow(subtitle: title),
+            : SubtitleRow(subtitle: title, padHorizontal: 0),
         RoundRectangleCard(
             onTap: period.type == PeriodType.classes
                 ? () async => Navigator.of(context, rootNavigator: true).push(
@@ -600,33 +655,86 @@ class FlowPage extends StatelessWidget {
             SliverToBoxAdapter(
               child: Obx(() {
                 if (_flowController.isFlowListOutdated()) {
-                  return MaterialBanner(
-                    backgroundColor: CupertinoDynamicColor.resolve(
-                        CupertinoColors.secondarySystemBackground, context),
-                    dividerColor: Colors.transparent,
-                    content: const Text('规划方案已过期'),
-                    contentTextStyle: TextStyle(
-                      fontSize: 16,
-                      color:
-                          CupertinoTheme.of(context).textTheme.textStyle.color!,
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(14, 12, 8, 8),
+                      decoration: BoxDecoration(
+                        color: CupertinoDynamicColor.resolve(
+                          CupertinoColors.systemOrange.withValues(alpha: 0.1),
+                          context,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: CupertinoColors.systemOrange.withValues(
+                            alpha: 0.22,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          const Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                CupertinoIcons.exclamationmark_triangle_fill,
+                                color: CupertinoColors.systemOrange,
+                                size: 20,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '计划需要更新',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(height: 3),
+                                    Text(
+                                      '任务发生了变化，当前安排可能已不再合适。',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: CupertinoColors.secondaryLabel,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              CupertinoButton(
+                                sizeStyle: CupertinoButtonSize.small,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                onPressed: () {
+                                  _flowController.updateDeadlineListTime();
+                                },
+                                child: const Text('暂时忽略'),
+                              ),
+                              CupertinoButton.filled(
+                                sizeStyle: CupertinoButtonSize.small,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
+                                onPressed: () async {
+                                  await newFlowList(context);
+                                  _flowController.flowList.refresh();
+                                },
+                                child: const Text('重新规划'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    leading:
-                        const Icon(CupertinoIcons.exclamationmark_triangle),
-                    actions: [
-                      CupertinoButton(
-                        child: const Text('忽略'),
-                        onPressed: () {
-                          _flowController.updateDeadlineListTime();
-                        },
-                      ),
-                      CupertinoButton(
-                        onPressed: () async {
-                          await newFlowList(context);
-                          _flowController.flowList.refresh();
-                        },
-                        child: const Text('重新规划'),
-                      ),
-                    ],
                   );
                 }
                 return const SizedBox();
@@ -636,18 +744,16 @@ class FlowPage extends StatelessWidget {
               () {
                 if (_flowController.flowList.isEmpty) {
                   return SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 500,
-                      child: Column(
-                        children: [
-                          const Spacer(),
-                          Text('今日无事可做',
-                              style: CupertinoTheme.of(context)
-                                  .textTheme
-                                  .textStyle),
-                          const Spacer(),
-                        ],
-                      ),
+                    child: AppEmptyState(
+                      icon: CupertinoIcons.sparkles,
+                      title: '接下来没有安排',
+                      message: '享受空闲时间，或创建一份新的专注计划。',
+                      actionLabel: '开始规划',
+                      onAction: () async {
+                        await newFlowList(context);
+                        _flowController.flowList.refresh();
+                      },
+                      minHeight: MediaQuery.sizeOf(context).height * 0.58,
                     ),
                   );
                 }

@@ -1,21 +1,18 @@
 import 'package:celechron/page/scholar/course_detail/course_detail_view.dart';
+import 'package:celechron/design/custom_colors.dart';
+import 'package:celechron/design/app_visual.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:celechron/model/session.dart';
 
 class SessionCard extends StatefulWidget {
   final List<Session> sessionList;
-  final CupertinoDynamicColor backgroundColor;
   final bool hideInfomation;
 
   const SessionCard({
     super.key,
     required this.sessionList,
     this.hideInfomation = false,
-    this.backgroundColor = const CupertinoDynamicColor.withBrightness(
-      color: Color.fromRGBO(0, 141, 236, 1.0),
-      darkColor: Color.fromRGBO(0, 108, 180, 1.0),
-    ),
   });
 
   @override
@@ -32,10 +29,10 @@ class _SessionCardState extends State<SessionCard>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
-      reverseDuration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 140),
+      reverseDuration: const Duration(milliseconds: 160),
     );
-    _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
+    _scaleAnimation = Tween<double>(begin: 1, end: 0.98).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeInOut,
@@ -56,18 +53,29 @@ class _SessionCardState extends State<SessionCard>
 
     String sessionName = "";
     String sessionLocation = "";
+    String sessionTeacher = "";
+    final hasConflict = widget.sessionList.length > 1;
     if (!widget.hideInfomation) {
-      if (widget.sessionList.length == 1) {
+      if (!hasConflict) {
         sessionName = widget.sessionList[0].name;
         sessionLocation = widget.sessionList[0].location ?? '未知地点';
+        sessionTeacher = widget.sessionList[0].teacher;
       } else {
-        sessionName = "冲突课程\n";
-        for (var i in widget.sessionList) {
-          sessionName =
-              '$sessionName\n${i.time.first}-${i.time.last}: ${i.name}';
-        }
+        sessionName = '课程冲突';
+        sessionLocation = '${widget.sessionList.length} 门课程重叠';
       }
     }
+
+    final brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    final accent = CupertinoDynamicColor.resolve(
+      hasConflict
+          ? AppSemanticColors.danger
+          : UidColors.colorFromUid(
+              widget.sessionList.first.id ?? widget.sessionList.first.name,
+            ),
+      context,
+    );
 
     return GestureDetector(
       onTapDown: (_) async {
@@ -146,68 +154,98 @@ class _SessionCardState extends State<SessionCard>
         scale: _scaleAnimation,
         child: Container(
           padding: const EdgeInsets.only(
-            top: 1.4,
-            bottom: 1.4,
-            left: 1.4,
-            right: 1.4,
+            top: 1.5,
+            bottom: 1.5,
+            left: 1.5,
+            right: 1.5,
           ),
           child: Container(
             alignment: Alignment.topCenter,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: CupertinoDynamicColor.resolve(
-                  widget.backgroundColor, context),
+              borderRadius: BorderRadius.circular(AppVisual.controlRadius),
+              color: accent.withValues(
+                alpha: brightness == Brightness.dark ? 0.2 : 0.12,
+              ),
+              border: Border(
+                left: BorderSide(color: accent, width: 3),
+                top: hasConflict
+                    ? BorderSide(color: accent.withValues(alpha: 0.55))
+                    : BorderSide.none,
+                right: hasConflict
+                    ? BorderSide(color: accent.withValues(alpha: 0.55))
+                    : BorderSide.none,
+                bottom: hasConflict
+                    ? BorderSide(color: accent.withValues(alpha: 0.55))
+                    : BorderSide.none,
+              ),
             ),
-            child: ClipRect(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                    left: 2.0, right: 2.0, top: 2.0, bottom: 2.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: Text(
-                        sessionName,
-                        textAlign: TextAlign.center,
-                        maxLines: widget.sessionList.length == 1
-                            ? 3 // 单课程最多3行
-                            : (widget.sessionList.length * 2)
-                                .clamp(2, 6), // 冲突课程最多6行
-                        overflow: TextOverflow.ellipsis,
-                        style: CupertinoTheme.of(context)
-                            .textTheme
-                            .textStyle
-                            .copyWith(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: const Color.fromRGBO(255, 255, 255, 1.0),
-                            ),
-                      ),
-                    ),
-                    if (!widget.hideInfomation &&
-                        sessionLocation.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppVisual.controlRadius - 1),
+              child: LayoutBuilder(
+                builder: (context, constraints) => Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 4, 3, 3),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (hasConflict)
+                        Icon(
+                          CupertinoIcons.exclamationmark_triangle_fill,
+                          color: accent,
+                          size: 11,
+                        ),
                       Flexible(
-                        fit: FlexFit.loose,
                         child: Text(
-                          sessionLocation,
-                          maxLines: 2,
+                          sessionName,
+                          maxLines: constraints.maxHeight > 72 ? 3 : 2,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
                           style: CupertinoTheme.of(context)
                               .textTheme
                               .textStyle
                               .copyWith(
-                                fontSize: 9,
-                                color: const Color.fromRGBO(255, 255, 255, 0.9),
+                                fontSize: 10,
+                                height: 1.12,
+                                fontWeight: FontWeight.w700,
+                                color: CupertinoDynamicColor.resolve(
+                                  CupertinoColors.label,
+                                  context,
+                                ),
                               ),
                         ),
                       ),
+                      if (!widget.hideInfomation &&
+                          sessionLocation.isNotEmpty &&
+                          constraints.maxHeight > 42) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          sessionLocation,
+                          maxLines: constraints.maxHeight > 85 ? 2 : 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            height: 1.1,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ],
+                      if (!widget.hideInfomation &&
+                          !hasConflict &&
+                          sessionTeacher.isNotEmpty &&
+                          constraints.maxHeight > 92) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          sessionTeacher,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 8.5,
+                            color: CupertinoColors.tertiaryLabel,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
