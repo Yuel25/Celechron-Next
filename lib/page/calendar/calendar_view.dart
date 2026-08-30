@@ -38,7 +38,7 @@ class CalendarPage extends StatelessWidget {
               () => SubtitleRow(
                 padHorizontal: 16,
                 padVertical: 8,
-                fontSize: 28,
+                fontSize: 30,
                 subtitle: _calendarController.viewMode.value ==
                         CalendarViewMode.calendar
                     ? '${_calendarController.focusedDay.value.year} 年 ${_calendarController.focusedDay.value.month} 月'
@@ -109,8 +109,8 @@ class CalendarPage extends StatelessWidget {
                             locale: 'zh_CN',
                             firstDay: DateTime.utc(2022, 9, 1),
                             lastDay: DateTime.utc(2030, 12, 31),
-                            rowHeight: 48.0,
-                            daysOfWeekHeight: 20.0,
+                            rowHeight: 44.0,
+                            daysOfWeekHeight: 18.0,
                             startingDayOfWeek: StartingDayOfWeek.monday,
                             daysOfWeekStyle: DaysOfWeekStyle(
                               dowTextFormatter: (date, locale) => <String>[
@@ -261,7 +261,7 @@ class CalendarPage extends StatelessWidget {
                             return const AppEmptyState(
                               icon: CupertinoIcons.calendar_badge_minus,
                               title: '这一天没有安排',
-                              message: '留一点空白也很好，或点击右上角添加日程。',
+                              message: '留一点空白也很好，或添加一项新日程。',
                               minHeight: 180,
                             );
                           }

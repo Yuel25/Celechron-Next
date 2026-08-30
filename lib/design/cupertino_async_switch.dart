@@ -3,6 +3,8 @@
 
 import 'package:flutter/cupertino.dart';
 
+import 'package:celechron/design/app_visual.dart';
+
 class CupertinoAsyncSwitch extends StatefulWidget {
   final bool value;
   final Future<void> Function(bool) onChanged;
@@ -50,6 +52,7 @@ class _CupertinoAsyncSwitchState extends State<CupertinoAsyncSwitch> {
             ),
           ),
         CupertinoSwitch(
+          activeTrackColor: AppVisual.brand,
           value: _isLoading ? !widget.value : widget.value,
           onChanged: _isLoading ? null : _handleChanged,
         ),

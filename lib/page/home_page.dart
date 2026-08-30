@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final tabBar = CupertinoTabBar(
-      iconSize: 26,
+      iconSize: 25,
       activeColor: AppVisual.brand,
       inactiveColor: CupertinoColors.secondaryLabel,
       backgroundColor: CupertinoDynamicColor.resolve(
@@ -58,22 +58,27 @@ class _HomePageState extends State<HomePage> {
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(CupertinoIcons.time),
+          activeIcon: Icon(CupertinoIcons.time_solid),
           label: '接下来',
         ),
         BottomNavigationBarItem(
           icon: Icon(CupertinoIcons.calendar),
+          activeIcon: Icon(CupertinoIcons.calendar_today),
           label: '日程',
         ),
         BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.check_mark),
+          icon: Icon(CupertinoIcons.check_mark_circled),
+          activeIcon: Icon(CupertinoIcons.check_mark_circled_solid),
           label: '任务',
         ),
         BottomNavigationBarItem(
           icon: Icon(CupertinoIcons.book),
+          activeIcon: Icon(CupertinoIcons.book_solid),
           label: '学业',
         ),
         BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.settings),
+          icon: Icon(CupertinoIcons.gear_alt, size: 24),
+          activeIcon: Icon(CupertinoIcons.gear_alt_fill, size: 24),
           label: '设置',
         ),
       ],

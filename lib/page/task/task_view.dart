@@ -549,117 +549,122 @@ class TaskPage extends StatelessWidget {
       child: SafeArea(
         child: CustomScrollView(
           slivers: [
-            CupertinoSliverNavigationBar(
-              largeTitle: const Text('任务'),
-              border: null,
-              stretch: true,
-              trailing: // Two buttons in the nav bar.
-                  Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Icon(
-                      CupertinoIcons.add_circled,
-                      semanticLabel: 'Add',
+            SliverToBoxAdapter(
+              child: SubtitleRow(
+                subtitle: '任务',
+                padHorizontal: 16,
+                padVertical: 8,
+                fontSize: 32,
+                right: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Icon(
+                        CupertinoIcons.add_circled,
+                        semanticLabel: '添加任务',
+                      ),
+                      onPressed: () async {
+                        await newDeadline(context);
+                        _taskController.updateDeadlineList();
+                        _taskController.taskList.refresh();
+                      },
                     ),
-                    onPressed: () async {
-                      await newDeadline(context);
-                      _taskController.updateDeadlineList();
-                      _taskController.taskList.refresh();
-                    },
-                  ),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Icon(
-                      CupertinoIcons.ellipsis_circle,
-                      semanticLabel: 'More',
-                    ),
-                    onPressed: () async {
-                      await showCupertinoModalPopup(
-                        context: context,
-                        builder: (BuildContext context) => CupertinoActionSheet(
-                          actions: <Widget>[
-                            CupertinoActionSheetAction(
-                              child: const Text('删除已完成任务'),
-                              onPressed: () async {
-                                _taskController
-                                    .removeCompletedDeadline(context);
-                                _taskController.updateDeadlineList();
-                                _taskController.taskList.refresh();
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                            CupertinoActionSheetAction(
-                              child: const Text('删除已过期任务'),
-                              onPressed: () async {
-                                _taskController.removeFailedDeadline(context);
-                                _taskController.updateDeadlineList();
-                                _taskController.taskList.refresh();
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                            CupertinoActionSheetAction(
-                              child: const Text('暂停所有任务'),
-                              onPressed: () {
-                                if (_taskController
-                                        .suspendAllDeadline(context) >
-                                    0) {
-                                  _flowController.removeFlowInFlowList();
-                                  _taskController.updateDeadlineListTime();
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Icon(
+                        CupertinoIcons.ellipsis_circle,
+                        semanticLabel: '更多任务操作',
+                      ),
+                      onPressed: () async {
+                        await showCupertinoModalPopup(
+                          context: context,
+                          builder: (BuildContext context) =>
+                              CupertinoActionSheet(
+                            actions: <Widget>[
+                              CupertinoActionSheetAction(
+                                child: const Text('删除已完成任务'),
+                                onPressed: () async {
+                                  _taskController
+                                      .removeCompletedDeadline(context);
+                                  _taskController.updateDeadlineList();
                                   _taskController.taskList.refresh();
-                                }
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                            CupertinoActionSheetAction(
-                              child: const Text('继续所有任务'),
-                              onPressed: () {
-                                if (_taskController
-                                        .continueAllDeadline(context) >
-                                    0) {
-                                  _flowController.removeFlowInFlowList();
-                                  _taskController.updateDeadlineListTime();
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              CupertinoActionSheetAction(
+                                child: const Text('删除已过期任务'),
+                                onPressed: () async {
+                                  _taskController.removeFailedDeadline(context);
+                                  _taskController.updateDeadlineList();
                                   _taskController.taskList.refresh();
-                                }
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              CupertinoActionSheetAction(
+                                child: const Text('暂停所有任务'),
+                                onPressed: () {
+                                  if (_taskController
+                                          .suspendAllDeadline(context) >
+                                      0) {
+                                    _flowController.removeFlowInFlowList();
+                                    _taskController.updateDeadlineListTime();
+                                    _taskController.taskList.refresh();
+                                  }
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              CupertinoActionSheetAction(
+                                child: const Text('继续所有任务'),
+                                onPressed: () {
+                                  if (_taskController
+                                          .continueAllDeadline(context) >
+                                      0) {
+                                    _flowController.removeFlowInFlowList();
+                                    _taskController.updateDeadlineListTime();
+                                    _taskController.taskList.refresh();
+                                  }
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                            cancelButton: CupertinoActionSheetAction(
+                              isDefaultAction: true,
+                              onPressed: () {
                                 Navigator.of(context).pop();
                               },
+                              child: const Text('取消'),
                             ),
-                          ],
-                          cancelButton: CupertinoActionSheetAction(
-                            isDefaultAction: true,
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('取消'),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
             Obx(() {
               final isEmpty = _taskController.todoDeadlineList.isEmpty &&
                   _taskController.doneDeadlineList.isEmpty &&
                   _taskController.fixedDeadlineList.isEmpty;
-              return SliverToBoxAdapter(
-                child: isEmpty
-                    ? AppEmptyState(
-                        icon: CupertinoIcons.check_mark_circled,
-                        title: '还没有任务',
-                        message: '添加一个 DDL 或固定日程，Celechron 会帮你安排时间。',
-                        actionLabel: '添加任务',
-                        onAction: () async {
-                          await newDeadline(context);
-                          _taskController.updateDeadlineList();
-                          _taskController.taskList.refresh();
-                        },
-                        minHeight: MediaQuery.sizeOf(context).height * 0.58,
-                      )
-                    : const SizedBox.shrink(),
-              );
+              if (isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppEmptyState(
+                    icon: CupertinoIcons.check_mark_circled,
+                    title: '还没有任务',
+                    message: '添加一个 DDL 或固定日程，Celechron 会帮你安排时间。',
+                    actionLabel: '添加任务',
+                    onAction: () async {
+                      await newDeadline(context);
+                      _taskController.updateDeadlineList();
+                      _taskController.taskList.refresh();
+                    },
+                    minHeight: 0,
+                  ),
+                );
+              }
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
             }),
             Obx(
               () => SliverList(

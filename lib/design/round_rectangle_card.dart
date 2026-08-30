@@ -148,7 +148,7 @@ class RoundRectangleCardWithForehead extends StatelessWidget {
             child: SizedBox(
                 child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppVisual.cardRadius),
             color: CupertinoDynamicColor.resolve(foreheadColor, context),
             boxShadow: const [],
           ),

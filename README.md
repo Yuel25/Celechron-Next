@@ -15,9 +15,18 @@
 
 ## 简介
 
-Celechron 是一款为浙江大学学生打造的时间管理 App:课表、考试、日程与待办整合进同一条时间线,帮你安排好每一天。本仓库为其 Android 平台的延续版本,基于 Flutter 构建,采用 iOS 原生(Cupertino)视觉风格。
+Celechron 是一款为浙江大学学生打造的时间管理 App：课表、考试、日程与待办整合进同一条时间线，帮你安排好每一天。本仓库为其 Android 平台的延续版本，基于 Flutter 构建，采用 Cupertino 视觉风格。
+
+当前开发版本：**1.3.4+5**
 
 ## 功能特性
+
+### ✨ 界面与体验
+
+- 五个一级页面使用统一的标题、安全区与底部标签栏规格
+- 空状态在可用内容区域内居中，适配不同屏幕高度
+- 学业信息使用低饱和度语义配色，支持亮色与暗色模式
+- 统一 Cupertino 图标和品牌色交互控件，并改善大字体与屏幕阅读器体验
 
 ### 🕐 接下来
 
@@ -65,7 +74,8 @@ Celechron 是一款为浙江大学学生打造的时间管理 App:课表、考�
 git clone https://github.com/Yuel25/Celechron-Next.git
 cd Celechron-Next
 flutter pub get
-flutter test                  # 运行单元测试
+flutter analyze               # 运行静态分析
+flutter test                  # 运行测试
 flutter build apk --release
 ```
 

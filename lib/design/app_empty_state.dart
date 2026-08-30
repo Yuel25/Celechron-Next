@@ -31,22 +31,22 @@ class AppEmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 72,
-                height: 72,
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
                   color: CupertinoDynamicColor.resolve(
-                    CupertinoColors.secondarySystemBackground,
+                    AppVisual.brandSoft,
                     context,
                   ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
-                  size: 30,
+                  size: 28,
                   color: AppVisual.brand,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
               Text(
                 title,
                 style: const TextStyle(
@@ -65,9 +65,14 @@ class AppEmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 CupertinoButton.filled(
                   sizeStyle: CupertinoButtonSize.medium,
+                  borderRadius: BorderRadius.circular(AppVisual.controlRadius),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 11,
+                  ),
                   onPressed: onAction,
                   child: Text(actionLabel!),
                 ),

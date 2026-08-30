@@ -21,6 +21,56 @@ abstract final class AppVisual {
     darkColor: Color(0xFF252A48),
   );
 
+  static const Color moduleGrade = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFEFF3FF),
+    darkColor: Color(0xFF252E47),
+  );
+
+  static const Color moduleCourse = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFECF8F7),
+    darkColor: Color(0xFF223735),
+  );
+
+  static const Color moduleHomework = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFF5EEFA),
+    darkColor: Color(0xFF352A3D),
+  );
+
+  static const Color modulePractice = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFFFF3E9),
+    darkColor: Color(0xFF3B2E25),
+  );
+
+  static const Color metricBlue = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFEAF2FF),
+    darkColor: Color(0xFF263449),
+  );
+
+  static const Color metricPeach = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFFFF0E8),
+    darkColor: Color(0xFF3A2A25),
+  );
+
+  static const Color metricGreen = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFEDF8EA),
+    darkColor: Color(0xFF263528),
+  );
+
+  static const Color metricViolet = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFF1EEFF),
+    darkColor: Color(0xFF302C45),
+  );
+
+  static const Color seasonAutumn = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFFFF1EB),
+    darkColor: Color(0xFF3B2B26),
+  );
+
+  static const Color seasonWinter = CupertinoDynamicColor.withBrightness(
+    color: Color(0xFFEAF3FF),
+    darkColor: Color(0xFF253448),
+  );
+
   static const List<BoxShadow> surfaceShadow = [
     BoxShadow(
       color: Color.fromRGBO(24, 32, 56, 0.035),

@@ -1,12 +1,13 @@
 import 'package:celechron/utils/platform_features.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 import 'package:url_launcher/url_launcher_string.dart';
 
 import 'package:celechron/utils/utils.dart';
 import 'package:celechron/model/option.dart';
 import 'package:celechron/design/cupertino_async_switch.dart';
+import 'package:celechron/design/app_visual.dart';
+import 'package:celechron/design/sub_title.dart';
 
 import 'allow_time_edit_page.dart';
 import 'course_id_mapping_edit_page.dart';
@@ -54,11 +55,13 @@ class OptionPage extends StatelessWidget {
         child: SafeArea(
             child: CustomScrollView(
           slivers: [
-            const CupertinoSliverNavigationBar(
-              largeTitle: Text('设置'),
-              backgroundColor: CupertinoColors.systemGroupedBackground,
-              border: null,
-              stretch: true,
+            SliverToBoxAdapter(
+              child: SubtitleRow(
+                subtitle: '设置',
+                padHorizontal: 16,
+                padVertical: 4,
+                fontSize: 32,
+              ),
             ),
             // 教务
             Obx(() => SliverToBoxAdapter(
@@ -86,8 +89,7 @@ class OptionPage extends StatelessWidget {
                                 child: Text('退出',
                                     style: TextStyle(
                                         color: CupertinoDynamicColor.resolve(
-                                            CupertinoColors.secondaryLabel,
-                                            context),
+                                            CupertinoColors.systemRed, context),
                                         fontSize: 16))),
                             onTap: () async {
                               await showCupertinoDialog(
@@ -139,6 +141,7 @@ class OptionPage extends StatelessWidget {
                         CupertinoListTile(
                             title: const Text('隐藏绩点'),
                             trailing: Obx(() => CupertinoSwitch(
+                                  activeTrackColor: AppVisual.brand,
                                   value: _optionController.hideHomeGpa,
                                   onChanged: (value) async {
                                     _optionController.hideHomeGpa = value;
@@ -157,6 +160,7 @@ class OptionPage extends StatelessWidget {
                         CupertinoListTile(
                             title: const Text('异步刷新'),
                             trailing: Obx(() => CupertinoSwitch(
+                                  activeTrackColor: AppVisual.brand,
                                   value: _optionController.asyncRefresh,
                                   onChanged: (value) async {
                                     _optionController.asyncRefresh = value;
@@ -165,6 +169,7 @@ class OptionPage extends StatelessWidget {
                         CupertinoListTile(
                             title: const Text('推送成绩变动'),
                             trailing: CupertinoSwitch(
+                              activeTrackColor: AppVisual.brand,
                               value: _optionController.pushOnGradeChange,
                               onChanged: PlatformFeatures.hasBackgroundRefresh
                                   ? (value) async {
@@ -176,6 +181,7 @@ class OptionPage extends StatelessWidget {
                         CupertinoListTile(
                             title: const Text('推送作业截止提醒'),
                             trailing: CupertinoSwitch(
+                              activeTrackColor: AppVisual.brand,
                               value: _optionController.pushOnDdlReminder,
                               onChanged: PlatformFeatures.hasBackgroundRefresh
                                   ? (value) async {
@@ -550,9 +556,9 @@ class BackChervonRow extends StatelessWidget {
     return Row(children: [
       if (child != null) child!,
       const SizedBox(width: 4),
-      Icon(Icons.arrow_forward_ios,
+      Icon(CupertinoIcons.chevron_forward,
           color: CupertinoDynamicColor.resolve(
-              CupertinoColors.tertiaryLabel, context),
+              CupertinoColors.secondaryLabel, context),
           size: 16)
     ]);
   }

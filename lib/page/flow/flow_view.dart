@@ -630,26 +630,28 @@ class FlowPage extends StatelessWidget {
         child: CustomScrollView(
           // Allow the list to shrink wrap around the top and bottom bars.
           slivers: [
-            CupertinoSliverNavigationBar(
-              largeTitle: const Text('接下来'),
-              stretch: true,
-              border: null,
-              trailing: // Two buttons in the nav bar.
-                  Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Icon(
-                      CupertinoIcons.refresh_circled,
-                      semanticLabel: 'Add',
+            SliverToBoxAdapter(
+              child: SubtitleRow(
+                subtitle: '接下来',
+                padHorizontal: 16,
+                padVertical: 8,
+                fontSize: 32,
+                right: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Icon(
+                        CupertinoIcons.refresh_circled,
+                        semanticLabel: '刷新计划',
+                      ),
+                      onPressed: () async {
+                        await newFlowList(context);
+                        _flowController.flowList.refresh();
+                      },
                     ),
-                    onPressed: () async {
-                      await newFlowList(context);
-                      _flowController.flowList.refresh();
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             SliverToBoxAdapter(
@@ -743,7 +745,8 @@ class FlowPage extends StatelessWidget {
             Obx(
               () {
                 if (_flowController.flowList.isEmpty) {
-                  return SliverToBoxAdapter(
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
                     child: AppEmptyState(
                       icon: CupertinoIcons.sparkles,
                       title: '接下来没有安排',
@@ -753,7 +756,7 @@ class FlowPage extends StatelessWidget {
                         await newFlowList(context);
                         _flowController.flowList.refresh();
                       },
-                      minHeight: MediaQuery.sizeOf(context).height * 0.58,
+                      minHeight: 0,
                     ),
                   );
                 }

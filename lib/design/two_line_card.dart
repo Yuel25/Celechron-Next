@@ -10,7 +10,7 @@ class TwoLineCard extends StatefulWidget {
   final bool animate;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final CupertinoDynamicColor backgroundColor;
+  final Color backgroundColor;
   final bool transparent;
   final double? height;
   final double? width;
