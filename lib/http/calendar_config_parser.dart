@@ -4,7 +4,7 @@ import 'package:celechron/http/zjuServices/response_utils.dart';
 import 'package:celechron/model/semester.dart';
 import 'package:flutter/foundation.dart';
 
-const calendarConfigBaseUrl = 'http://calendar.celechron.top/';
+const calendarConfigBaseUrl = 'https://calendar.celechron.top/';
 
 /// 返回日期所属学年的起始年份；九月是学年边界，不代表课表开放时间。
 int academicYearStartFor(DateTime now) =>

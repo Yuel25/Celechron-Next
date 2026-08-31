@@ -16,7 +16,7 @@ void main() {
     expect(calendarObjectKeyForSemester('2025-2026-2'), '2025-2026-2.json');
     expect(
       calendarConfigUriForSemester('2025-2026-2').toString(),
-      'http://calendar.celechron.top/2025-2026-2.json',
+      'https://calendar.celechron.top/2025-2026-2.json',
     );
   });
 

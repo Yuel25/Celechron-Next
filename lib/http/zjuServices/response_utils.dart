@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:celechron/utils/json_utils.dart';
 import 'package:celechron/services/diagnostic_log_service.dart';
@@ -7,6 +8,8 @@ import 'package:celechron/services/diagnostic_log_service.dart';
 import 'exceptions.dart';
 
 export 'package:celechron/utils/json_utils.dart';
+
+const int defaultMaxResponseBodyBytes = 10 * 1024 * 1024;
 
 String responseSummary(String body) {
   // 诊断摘要禁止复制业务正文，只保留定位格式问题所需的结构信息。
@@ -240,10 +243,58 @@ Future<String> readResponseText(
 Future<String> readResponseBody(
   HttpClientResponse response, {
   required String context,
+  int maxBytes = defaultMaxResponseBodyBytes,
 }) {
-  return response.transform(utf8.decoder).join().timeout(
+  if (maxBytes <= 0) {
+    throw ArgumentError.value(maxBytes, 'maxBytes', '必须大于 0');
+  }
+  final declaredLength = response.contentLength;
+  if (declaredLength > maxBytes) {
+    throw ResponseBodyTooLargeException(context, maxBytes, declaredLength);
+  }
+  return decodeResponseBody(
+    response,
+    context: context,
+    maxBytes: maxBytes,
+  ).timeout(
       const Duration(seconds: 8),
       onTimeout: () => throw requestTimeout('$context：读取响应内容超时'));
+}
+
+Future<String> decodeResponseBody(
+  Stream<List<int>> chunks, {
+  required String context,
+  int maxBytes = defaultMaxResponseBodyBytes,
+}) async {
+  if (maxBytes <= 0) {
+    throw ArgumentError.value(maxBytes, 'maxBytes', '必须大于 0');
+  }
+  final bytes = BytesBuilder(copy: false);
+  var receivedBytes = 0;
+  await for (final chunk in chunks) {
+    receivedBytes += chunk.length;
+    if (receivedBytes > maxBytes) {
+      throw ResponseBodyTooLargeException(context, maxBytes, receivedBytes);
+    }
+    bytes.add(chunk);
+  }
+  return utf8.decode(bytes.takeBytes());
+}
+
+class ResponseBodyTooLargeException implements Exception {
+  final String context;
+  final int maxBytes;
+  final int receivedBytes;
+
+  const ResponseBodyTooLargeException(
+    this.context,
+    this.maxBytes,
+    this.receivedBytes,
+  );
+
+  @override
+  String toString() => '$context：响应内容过大'
+      '（上限 $maxBytes 字节，已接收 $receivedBytes 字节）';
 }
 
 Object? decodeJsonValue(String body, {required String context}) {

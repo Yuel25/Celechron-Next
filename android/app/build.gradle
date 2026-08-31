@@ -66,7 +66,11 @@ android {
 
     buildTypes {
         release {
-            // 有 key.properties 时用正式 keystore 签名，否则回落 debug 签名以便本地调试
+            def isReleaseTask = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }
+            if (System.getenv('CI') == 'true' && isReleaseTask && !keystorePropertiesFile.exists()) {
+                throw new GradleException('CI release build requires android/key.properties')
+            }
+            // 本地无 key.properties 时仍可回落 debug 签名；CI 上则强制正式签名。
             signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
         }
     }
