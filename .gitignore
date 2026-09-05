@@ -248,7 +248,8 @@ DerivedData/
 *.tmp
 ### https://raw.github.com/github/gitignore/340e2fe08a2356c2e3760ff58c3a9e1fddf08060/Android.gitignore
 ### https://raw.github.com/github/gitignore/340e2fe08a2356c2e3760ff58c3a9e1fddf08060/Dart.gitignore
-pubspec.lock
+# 应用依赖锁文件随源码提交，保证本地与 CI 解析相同版本。
+!pubspec.lock
 ### https://raw.github.com/github/gitignore/340e2fe08a2356c2e3760ff58c3a9e1fddf08060/Global/DartEditor.gitignore
 .project
 .buildlog

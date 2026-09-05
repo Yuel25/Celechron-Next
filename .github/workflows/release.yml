@@ -45,10 +45,11 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          SIGNING_CERT_SHA256: ${{ secrets.SIGNING_CERT_SHA256 }}
         run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "未配置签名 secrets，使用 debug 签名构建"
-            exit 0
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$SIGNING_CERT_SHA256" ]; then
+            echo "::error::发布必须配置完整的正式签名及证书指纹"
+            exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           cat > android/key.properties <<EOF
@@ -64,8 +65,25 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Analyze code
+        run: flutter analyze
+
       - name: Build release APK
         run: flutter build apk --release
+
+      - name: Verify APK signature
+        env:
+          SIGNING_CERT_SHA256: ${{ secrets.SIGNING_CERT_SHA256 }}
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
+          SIGNATURE_OUTPUT=$("$APKSIGNER" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk)
+          ACTUAL_CERT=$(echo "$SIGNATURE_OUTPUT" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          EXPECTED_CERT=$(echo "$SIGNING_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')
+          if [ -z "$ACTUAL_CERT" ] || [ "$ACTUAL_CERT" != "$EXPECTED_CERT" ]; then
+            echo "::error::APK 签名证书指纹与配置不一致"
+            exit 1
+          fi
+          echo "APK 正式签名校验通过"
 
       - name: Rename APK
         run: |
@@ -85,5 +103,6 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
           files: Celechron-*.apk
-          generate_release_notes: true
+          name: Celechron ${{ github.event.inputs.tag || github.ref_name }}
+          body_path: docs/releases/${{ github.event.inputs.tag || github.ref_name }}.md
           make_latest: true

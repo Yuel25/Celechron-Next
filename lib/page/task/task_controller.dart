@@ -2,12 +2,15 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/model/task.dart';
+import 'package:celechron/model/period.dart';
+import 'package:celechron/services/diagnostic_log_service.dart';
 
 class TaskController extends GetxController {
   final taskList = Get.find<RxList<Task>>(tag: 'taskList');
   final taskListLastUpdate = Get.find<Rx<DateTime>>(tag: 'taskListLastUpdate');
   final _db = Get.find<DatabaseHelper>(tag: 'db');
   Timer? _timer;
+  bool _saveFailed = false;
 
   List<Task> get todoDeadlineList => taskList
       .where((element) => (element.type == TaskType.deadline &&
@@ -28,7 +31,8 @@ class TaskController extends GetxController {
   void onInit() {
     updateDeadlineList();
     _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      updateDeadlineList();
+      final changed = updateDeadlineList();
+      if (_saveFailed && !changed) unawaited(saveDeadlineListToDb());
     });
     super.onInit();
   }
@@ -40,8 +44,25 @@ class TaskController extends GetxController {
   }
 
   Future<void> saveDeadlineListToDb() async {
-    await _db.setTaskList(taskList);
-    await _db.setTaskListUpdateTime(taskListLastUpdate.value);
+    try {
+      await _db.saveTaskFlowSnapshot(
+        tasks: taskList,
+        flows: Get.find<RxList<Period>>(tag: 'flowList'),
+        taskUpdatedAt: taskListLastUpdate.value,
+        flowUpdatedAt: Get.find<Rx<DateTime>>(tag: 'flowListLastUpdate').value,
+      );
+      _saveFailed = false;
+    } on Object catch (error, stackTrace) {
+      _saveFailed = true;
+      DiagnosticLogService.instance.record(
+        level: CelechronLogLevel.error,
+        module: 'storage',
+        operation: 'saveTaskFlowSnapshot',
+        message: '任务与规划快照保存失败，将重试',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   void loadDeadlineListLastUpdate() {

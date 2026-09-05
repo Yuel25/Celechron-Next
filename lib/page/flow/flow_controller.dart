@@ -6,8 +6,12 @@ import 'package:celechron/model/task.dart';
 import 'package:celechron/model/period.dart';
 import 'package:celechron/model/scholar.dart';
 import 'package:celechron/utils/utils.dart';
+import 'package:celechron/services/diagnostic_log_service.dart';
 
 class FlowController extends GetxController {
+  FlowController({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
   final scholar = Get.find<Rx<Scholar>>(tag: 'scholar');
   final flowList = Get.find<RxList<Period>>(tag: 'flowList');
   final flowListLastUpdate = Get.find<Rx<DateTime>>(tag: 'flowListLastUpdate');
@@ -16,15 +20,19 @@ class FlowController extends GetxController {
   final _db = Get.find<DatabaseHelper>(tag: 'db');
   late var _scholarFlowList = scholar.value.periods;
   var _currentScholarFlowCursor = -1;
-  var timeNow = DateTime.now().obs;
+  late final timeNow = _now().obs;
   Timer? _timer;
+  Worker? _scholarWorker;
+  Worker? _taskWorker;
+  bool _notifyingProgress = false;
   // 数据变化时置位，下一秒执行完整 walk；平时按 _nextWalkAt 的时间边界调度
   bool _walkPending = false;
   DateTime _nextWalkAt = DateTime.fromMillisecondsSinceEpoch(0);
-  int _lastFlowSig = 0;
+  int? _lastFlowSig;
   DateTime _lastAccrualSaveAt = DateTime.fromMillisecondsSinceEpoch(0);
 
-  bool get isDuringFlow => flowList.first.startTime.isBefore(DateTime.now());
+  bool get isDuringFlow =>
+      flowList.isNotEmpty && flowList.first.startTime.isBefore(_now());
 
   @override
   void onInit() {
@@ -37,19 +45,19 @@ class FlowController extends GetxController {
     _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => _onTick());
 
     // 当“学业”页面有更新（例如出现新课程），更新基本Flow列表
-    ever(scholar, (callback) {
+    _scholarWorker = ever(scholar, (callback) {
       refreshScholarFlowList();
       _walkPending = true;
     });
-    ever(taskList, (callback) {
-      _walkPending = true;
+    _taskWorker = ever(taskList, (callback) {
+      if (!_notifyingProgress) _walkPending = true;
     });
 
     super.onInit();
   }
 
   void _onTick() {
-    final now = DateTime.now();
+    final now = _now();
     timeNow.value = now;
     if (_walkPending || !now.isBefore(_nextWalkAt)) {
       _walkPending = false;
@@ -63,12 +71,32 @@ class FlowController extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
+    _scholarWorker?.dispose();
+    _taskWorker?.dispose();
     super.onClose();
   }
 
   Future<void> saveFlowListToDb() async {
-    await _db.setFlowList(flowList);
-    await _db.setFlowListUpdateTime(flowListLastUpdate.value);
+    try {
+      await _db.saveTaskFlowSnapshot(
+        tasks: taskList,
+        flows: flowList,
+        taskUpdatedAt: taskListLastUpdate.value,
+        flowUpdatedAt: flowListLastUpdate.value,
+      );
+    } on Object catch (error, stackTrace) {
+      _lastFlowSig = null;
+      _lastAccrualSaveAt = DateTime.fromMillisecondsSinceEpoch(0);
+      _walkPending = true;
+      DiagnosticLogService.instance.record(
+        level: CelechronLogLevel.error,
+        module: 'storage',
+        operation: 'saveTaskFlowSnapshot',
+        message: '任务与规划快照保存失败，将重试',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   void loadFlowListLastUpdate() {
@@ -82,7 +110,7 @@ class FlowController extends GetxController {
   void updateDeadlineListTime() {
     flowListLastUpdate.value = taskListLastUpdate.value.copyWith();
     // “规划方案已过期”横幅的忽略操作只走这里，需立即持久化，重启后横幅才不会复现
-    _db.setFlowListUpdateTime(flowListLastUpdate.value);
+    unawaited(saveFlowListToDb());
   }
 
   void removeFlowInFlowList() {
@@ -111,8 +139,12 @@ class FlowController extends GetxController {
         }
       }
     }
-    flowList.removeWhere((element) =>
-        element.type == PeriodType.flow || element.type == PeriodType.classes);
+    final newFlows = flowList
+        .where((element) =>
+            element.type != PeriodType.flow &&
+            element.type != PeriodType.classes)
+        .map((element) => element.copyWith())
+        .toList();
     if (lastDeadlineEndsAt.difference(startsAt) < const Duration(days: 1)) {
       lastDeadlineEndsAt = startsAt.add(const Duration(days: 1));
     }
@@ -232,7 +264,7 @@ class FlowController extends GetxController {
       if (tmpr.isAfter(lastDeadlineEndsAt)) tmpr = lastDeadlineEndsAt;
       if (tmpl.isBefore(startsAt)) tmpl = startsAt;
 
-      flowList.add(x.copyWith());
+      newFlows.add(x.copyWith());
 
       int indexl = atListIndex[tmpl]!;
       int indexr = atListIndex[tmpr]!;
@@ -264,10 +296,11 @@ class FlowController extends GetxController {
     TimeAssignSet ans =
         getTimeAssignSet(workTime, restTime, deadlines, ableList);
     if (!ans.isValid) return -1;
-    flowList.addAll(ans.assignSet);
-    flowList.sort((a, b) {
+    newFlows.addAll(ans.assignSet);
+    newFlows.sort((a, b) {
       return a.startTime.compareTo(b.startTime);
     });
+    flowList.assignAll(newFlows);
     updateDeadlineListTime();
     flowList.refresh();
     _refreshScholarCursor();
@@ -314,7 +347,7 @@ class FlowController extends GetxController {
     });
 
     /* 同步Flow页面的任务进度到Task页面 */
-    _syncFlowProgress(DateTime.now());
+    _syncFlowProgress(_now());
 
     /* 重新添加最近48h内的至多5节课程（防止Flow页面太乱）*/
     _refreshScholarCursor();
@@ -327,7 +360,7 @@ class FlowController extends GetxController {
                 e.uid == _scholarFlowList[i + _currentScholarFlowCursor].uid) &&
             _scholarFlowList[i + _currentScholarFlowCursor]
                     .endTime
-                    .difference(DateTime.now())
+                    .difference(_now())
                     .inMinutes <
                 2880) {
           flowList
@@ -339,7 +372,7 @@ class FlowController extends GetxController {
     /* 每个固定日程添加至多5项 */
     for (var x in taskList) {
       if (x.type == TaskType.fixed) {
-        DateTime time = DateTime.now();
+        DateTime time = _now();
         DateTime? last;
         for (int i = 0; i < 5; i++) {
           Period? period = x.deadlineOfTime(time, predicting: true);
@@ -363,52 +396,54 @@ class FlowController extends GetxController {
       _lastFlowSig = sig;
       saveFlowListToDb();
     }
-    _nextWalkAt = _computeNextWalkAt(DateTime.now());
+    _nextWalkAt = _computeNextWalkAt(_now());
   }
 
   /* 同步Flow页面的任务进度到Task页面 */
   void _syncFlowProgress(DateTime now) {
     var didAccrue = false;
+    var removed = false;
+    final tasksByUid = {for (final task in taskList) task.uid: task};
     for (var i = 0; i < flowList.length; i++) {
       if (flowList[i].startTime.isAfter(now)) break;
       if (flowList[i].type == PeriodType.flow) {
-        Duration prevProgress =
-            (flowList[i].lastUpdateTime ?? flowList[i].startTime)
-                .difference(flowList[i].startTime);
-        flowList[i].lastUpdateTime = now;
-        Duration currProgress =
-            flowList[i].lastUpdateTime!.difference(flowList[i].startTime);
-        Duration length = flowList[i].endTime.difference(flowList[i].startTime);
-
-        if (currProgress <= Duration.zero) break;
-        if (currProgress > length) currProgress = length;
-
-        for (var deadline in taskList) {
-          if (deadline.uid != flowList[i].fromUid) continue;
-          deadline.updateTimeSpent(
-              deadline.timeSpent - prevProgress + currProgress);
+        final period = flowList[i];
+        final previous = period.lastUpdateTime ?? period.startTime;
+        final current = now.isAfter(period.endTime) ? period.endTime : now;
+        // 时钟回拨时不回退累计游标；结束时间之后也不重复扣减或累计。
+        if (current.isAfter(previous)) {
+          final deadline = tasksByUid[period.fromUid];
+          deadline?.updateTimeSpent(
+              deadline.timeSpent + current.difference(previous));
+          period.lastUpdateTime = current;
+          didAccrue = true;
         }
-        didAccrue = true;
-        taskList.refresh();
-        flowList.refresh();
       }
       if (flowList[i].endTime.isBefore(now)) {
         flowList.removeAt(i);
         i--;
-        flowList.refresh();
-        taskList.refresh();
+        removed = true;
         // 跨过了结束边界，下一秒做一次完整 walk（补课程、重算下个边界）
         _walkPending = true;
       }
     }
-    // timeSpent（存于任务表）与 lastUpdateTime（存于规划表）必须成对落盘，
-    // 否则杀进程重启后按墙钟回填会多算或少算，进行中每 15 秒同步一次快照。
-    if (didAccrue &&
-        now.difference(_lastAccrualSaveAt) >= const Duration(seconds: 15)) {
+    if (didAccrue) {
+      _notifyingProgress = true;
+      try {
+        taskList.refresh();
+      } finally {
+        _notifyingProgress = false;
+      }
+      flowList.refresh();
+    }
+    // timeSpent 与 lastUpdateTime 在同一条记录中成对落盘，
+    // 进行中每 15 秒保存，移除已结束项时立即保存最终累计进度。
+    if (removed ||
+        (didAccrue &&
+            now.difference(_lastAccrualSaveAt) >=
+                const Duration(seconds: 15))) {
       _lastAccrualSaveAt = now;
-      saveFlowListToDb();
-      _db.setTaskList(taskList);
-      _db.setTaskListUpdateTime(taskListLastUpdate.value);
+      unawaited(saveFlowListToDb());
     }
   }
 
@@ -451,6 +486,6 @@ class FlowController extends GetxController {
 
   void _refreshScholarCursor() {
     _currentScholarFlowCursor =
-        _scholarFlowList.indexWhere((e) => e.endTime.isAfter(DateTime.now()));
+        _scholarFlowList.indexWhere((e) => e.endTime.isAfter(_now()));
   }
 }

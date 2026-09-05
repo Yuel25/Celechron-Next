@@ -21,6 +21,7 @@ import 'exam_list/exam_list_view.dart';
 import 'grade_detail/grade_detail_view.dart';
 import 'practice_score/practice_score_page.dart';
 import 'scholar_controller.dart';
+import 'package:celechron/design/data_updated_label.dart';
 import 'package:celechron/page/option/option_controller.dart';
 
 Future<void> showRefreshResultDialog(
@@ -138,14 +139,6 @@ class ScholarPage extends StatelessWidget {
 
   final _scholarController = Get.put(ScholarController());
 
-  String _lastUpdatedText(Duration duration) {
-    if (duration.inMinutes > 10000000) return '获取数据时遇到问题';
-    if (duration.inMinutes < 1) return '刚刚';
-    if (duration.inMinutes < 60) return '${duration.inMinutes} 分钟前';
-    if (duration.inHours < 24) return '${duration.inHours} 小时前';
-    return '${duration.inDays} 天前';
-  }
-
   // 让页内横向列表在桌面端也响应鼠标拖动。外层 PageView 为支持鼠标切页开启了
   // 鼠标拖动，横向列表若不响应鼠标，拖动会漏到 PageView 上造成误切页；
   // 内层可滚动组件在手势竞技中优先，包上后拖动由列表自己消费（触屏行为不变）
@@ -209,53 +202,11 @@ class ScholarPage extends StatelessWidget {
                                                     context),
                                           ))),
                                   const Spacer(),
-                                  // alert icon
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 4, bottom: 4),
-                                    child: Icon(
-                                      _scholarController
-                                                  .durationToLastUpdateGrade
-                                                  .inMinutes <
-                                              5
-                                          ? CupertinoIcons
-                                              .check_mark_circled_solid
-                                          : CupertinoIcons
-                                              .exclamationmark_circle_fill,
-                                      color: CupertinoDynamicColor.resolve(
-                                        _scholarController
-                                                    .durationToLastUpdateGrade
-                                                    .inMinutes <
-                                                5
-                                            ? AppVisual.brand
-                                            : CupertinoColors.systemOrange,
-                                        context,
-                                      ),
-                                      size: 13,
-                                    ),
-                                  ),
+                                  // 缓存时间使用中性文案，异常由刷新结果提示。
                                   Flexible(
-                                    child: Padding(
-                                        padding: const EdgeInsets.only(
-                                            left: 4,
-                                            top: 4,
-                                            bottom: 4,
-                                            right: 16),
-                                        child: Text(
-                                            _lastUpdatedText(_scholarController
-                                                .durationToLastUpdateGrade),
-                                            maxLines: 1,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.normal,
-                                              overflow: TextOverflow.ellipsis,
-                                              color:
-                                                  CupertinoDynamicColor.resolve(
-                                                      CupertinoColors
-                                                          .secondaryLabel,
-                                                      context),
-                                            ))),
-                                  )
+                                      child: DataUpdatedLabel(
+                                          age: _scholarController
+                                              .durationToLastUpdateGrade)),
                                 ])),
                             onTap: () async =>
                                 Navigator.of(context, rootNavigator: true).push(
@@ -357,46 +308,11 @@ class ScholarPage extends StatelessWidget {
                                             CupertinoColors.label, context),
                                       ))),
                               const Spacer(),
-                              // alert icon
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 4, bottom: 4),
-                                child: Icon(
-                                  _scholarController.durationToLastUpdateCourse
-                                              .inMinutes <
-                                          5
-                                      ? CupertinoIcons.check_mark_circled_solid
-                                      : CupertinoIcons
-                                          .exclamationmark_circle_fill,
-                                  color: CupertinoDynamicColor.resolve(
-                                    _scholarController
-                                                .durationToLastUpdateCourse
-                                                .inMinutes <
-                                            5
-                                        ? AppVisual.brand
-                                        : CupertinoColors.systemOrange,
-                                    context,
-                                  ),
-                                  size: 13,
-                                ),
-                              ),
+                              // 缓存时间使用中性文案，异常由刷新结果提示。
                               Flexible(
-                                child: Padding(
-                                    padding: const EdgeInsets.only(
-                                        left: 4, top: 4, bottom: 4, right: 16),
-                                    child: Text(
-                                        _lastUpdatedText(_scholarController
-                                            .durationToLastUpdateCourse),
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.normal,
-                                          overflow: TextOverflow.ellipsis,
-                                          color: CupertinoDynamicColor.resolve(
-                                              CupertinoColors.secondaryLabel,
-                                              context),
-                                        ))),
-                              )
+                                  child: DataUpdatedLabel(
+                                      age: _scholarController
+                                          .durationToLastUpdateCourse)),
                             ])),
                         child: Column(
                           children: [
@@ -546,46 +462,10 @@ class ScholarPage extends StatelessWidget {
                                             CupertinoColors.label, context),
                                       ))),
                               const Spacer(),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 4, bottom: 4),
-                                child: Icon(
-                                  _scholarController
-                                              .durationToLastUpdateHomework
-                                              .inMinutes <
-                                          5
-                                      ? CupertinoIcons.check_mark_circled_solid
-                                      : CupertinoIcons
-                                          .exclamationmark_circle_fill,
-                                  color: CupertinoDynamicColor.resolve(
-                                    _scholarController
-                                                .durationToLastUpdateHomework
-                                                .inMinutes <
-                                            5
-                                        ? AppVisual.brand
-                                        : CupertinoColors.systemOrange,
-                                    context,
-                                  ),
-                                  size: 13,
-                                ),
-                              ),
                               Flexible(
-                                child: Padding(
-                                    padding: const EdgeInsets.only(
-                                        left: 4, top: 4, bottom: 4, right: 16),
-                                    child: Text(
-                                        _lastUpdatedText(_scholarController
-                                            .durationToLastUpdateHomework),
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.normal,
-                                          overflow: TextOverflow.ellipsis,
-                                          color: CupertinoDynamicColor.resolve(
-                                              CupertinoColors.secondaryLabel,
-                                              context),
-                                        ))),
-                              )
+                                  child: DataUpdatedLabel(
+                                      age: _scholarController
+                                          .durationToLastUpdateHomework)),
                             ])),
                         child: Column(
                           children: [

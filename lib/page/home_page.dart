@@ -95,6 +95,7 @@ class _HomePageState extends State<HomePage> {
       enabled: false,
       child: PageView(
         controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (index) {
           if (index != _indexNum) {
             setState(() {
@@ -102,8 +103,7 @@ class _HomePageState extends State<HomePage> {
             });
           }
         },
-        // 允许鼠标拖动切页（与原 GestureDetector 行为一致），只作用于本 PageView，
-        // 不影响页面内部列表；scrollbars 必须关掉，否则桌面端会叠一条横向滚动条
+        // 主页面仅通过标签切换，保留任务滑动操作和日历内部手势。
         scrollBehavior: scrollBehavior.copyWith(
           scrollbars: false,
           dragDevices: {

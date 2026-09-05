@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -14,6 +16,7 @@ import 'adapters/deadline_adapter.dart';
 import 'adapters/period_adapter.dart';
 import 'adapters/fuse_adapter.dart';
 import 'adapters/course_id_map_adapter.dart';
+import 'secure_storage_migration.dart';
 
 class DatabaseHelper {
   late final Box optionsBox;
@@ -24,6 +27,8 @@ class DatabaseHelper {
   late final Box fuseBox;
   late final Box customGpaBox;
   late final FlutterSecureStorage secureStorage;
+  Future<void> _snapshotWrites = Future<void>.value();
+  static const taskFlowSnapshotKey = 'taskFlowSnapshotV1';
 
   Future<void> init() async {
     Hive.registerAdapter(DurationAdapter());
@@ -44,20 +49,9 @@ class DatabaseHelper {
     fuseBox = await Hive.openBox(dbFuse);
     customGpaBox = await Hive.openBox(dbCustomGpa);
     secureStorage = const FlutterSecureStorage();
-    // Migrate all items without groupID
-    var secureStorageItems = await secureStorage.readAll(
-        iOptions: const IOSOptions(
-            accessibility: KeychainAccessibility.first_unlock,
-            accountName: 'Celechron'));
-    await Future.forEach(secureStorageItems.entries, (e) async {
-      await secureStorage.delete(
-          key: e.key,
-          iOptions: const IOSOptions(
-              accessibility: KeychainAccessibility.first_unlock,
-              accountName: 'Celechron'));
-      await secureStorage.write(
-          key: e.key, value: e.value, iOptions: secureStorageIOSOptions);
-    });
+    if (Platform.isIOS) {
+      await migrateLegacySecureStorage(secureStorage, optionsBox);
+    }
   }
 
   // Options
@@ -209,20 +203,41 @@ class DatabaseHelper {
   final String kFlowListUpdateTime = 'flowListUpdateTime';
 
   List<Period> getFlowList() {
-    return List<Period>.from(flowBox.get(kFlowList) ?? <Period>[]);
-  }
-
-  Future<void> setFlowList(List<Period> flowList) async {
-    await flowBox.put(kFlowList, flowList);
+    final snapshot = flowBox.get(taskFlowSnapshotKey) as Map?;
+    return List<Period>.from(
+        snapshot?['flows'] ?? flowBox.get(kFlowList) ?? <Period>[]);
   }
 
   DateTime getFlowListUpdateTime() {
-    return flowBox.get(kFlowListUpdateTime) ??
+    final snapshot = flowBox.get(taskFlowSnapshotKey) as Map?;
+    return snapshot?['flowUpdatedAt'] ??
+        flowBox.get(kFlowListUpdateTime) ??
         DateTime.fromMicrosecondsSinceEpoch(0);
   }
 
-  Future<void> setFlowListUpdateTime(DateTime flowListUpdateTime) async {
-    await flowBox.put(kFlowListUpdateTime, flowListUpdateTime);
+  /// 两张旧表仅作为升级时的读取来源。进度和累计游标必须在同一条
+  /// Hive 记录中提交，任何保存入口都必须提供同一时刻的完整状态。
+  Future<void> saveTaskFlowSnapshot({
+    required List<Task> tasks,
+    required List<Period> flows,
+    required DateTime taskUpdatedAt,
+    required DateTime flowUpdatedAt,
+  }) {
+    // 入队前复制，避免排队期间 UI 改动对象，混入不同时间的状态。
+    final snapshot = <String, dynamic>{
+      'tasks': tasks.map((task) => task.copyWith()).toList(),
+      'flows': flows.map((flow) => flow.copyWith()).toList(),
+      'taskUpdatedAt': taskUpdatedAt,
+      'flowUpdatedAt': flowUpdatedAt,
+    };
+    final write = _snapshotWrites.then((_) async {
+      await flowBox.put(taskFlowSnapshotKey, snapshot);
+      await flowBox.flush();
+    });
+    // 某次失败不能阻断后续保存，异常仍通过返回的 Future 交给调用方。
+    _snapshotWrites =
+        write.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return write;
   }
 
   // Task
@@ -231,20 +246,16 @@ class DatabaseHelper {
   final String kTaskListUpdateTime = 'deadlineListUpdateTime';
 
   List<Task> getTaskList() {
-    return List<Task>.from(taskBox.get(kTaskList) ?? <Task>[]);
-  }
-
-  Future<void> setTaskList(List<Task> deadlineList) async {
-    await taskBox.put(kTaskList, deadlineList);
+    final snapshot = flowBox.get(taskFlowSnapshotKey) as Map?;
+    return List<Task>.from(
+        snapshot?['tasks'] ?? taskBox.get(kTaskList) ?? <Task>[]);
   }
 
   DateTime getTaskListUpdateTime() {
-    return taskBox.get(kTaskListUpdateTime) ??
+    final snapshot = flowBox.get(taskFlowSnapshotKey) as Map?;
+    return snapshot?['taskUpdatedAt'] ??
+        taskBox.get(kTaskListUpdateTime) ??
         DateTime.fromMicrosecondsSinceEpoch(0);
-  }
-
-  Future<void> setTaskListUpdateTime(DateTime deadlineListUpdateTime) async {
-    await taskBox.put(kTaskListUpdateTime, deadlineListUpdateTime);
   }
 
   // Scholar

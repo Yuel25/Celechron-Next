@@ -11,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../utils/utils.dart';
+import 'ddl_reminder.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -167,10 +168,8 @@ Future<void> refreshScholar() async {
       var now = DateTime.now();
       var upcomingTodos = scholar.todos.where((todo) {
         if (todo.endTime == null) return false;
-        var timeLeft = todo.endTime!.difference(now);
         // 24 小时内到期且尚未通知过
-        return timeLeft.inHours >= 0 &&
-            timeLeft.inHours <= 24 &&
+        return isWithinDdlReminderWindow(todo.endTime!, now) &&
             !notifiedDdlIds.contains(todo.id);
       }).toList();
 

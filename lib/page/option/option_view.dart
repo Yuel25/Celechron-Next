@@ -158,7 +158,8 @@ class OptionPage extends StatelessWidget {
                           },
                         ),
                         CupertinoListTile(
-                            title: const Text('异步刷新'),
+                            title: const Text('刷新时逐项显示'),
+                            subtitle: const Text('获取一项就显示一项'),
                             trailing: Obx(() => CupertinoSwitch(
                                   activeTrackColor: AppVisual.brand,
                                   value: _optionController.asyncRefresh,
@@ -221,7 +222,7 @@ class OptionPage extends StatelessWidget {
                         child: Text('时间规划', style: headerFooterTextStyle)),
                     children: <CupertinoListTile>[
                   CupertinoListTile(
-                    title: const Text('工作段时间长度'),
+                    title: const Text('每次专注时长'),
                     trailing: BackChervonRow(
                         child: Obx(() => Text(
                             durationToString(_optionController.workTime),
@@ -236,7 +237,7 @@ class OptionPage extends StatelessWidget {
                           builder: (BuildContext context) {
                             return CupertinoAlertDialog(
                               title: const Text(
-                                '工作段时间长度',
+                                '每次专注时长',
                               ),
                               content: SizedBox(
                                 width: double.maxFinite,
@@ -276,7 +277,7 @@ class OptionPage extends StatelessWidget {
                     },
                   ),
                   CupertinoListTile(
-                    title: const Text('休息段时间长度'),
+                    title: const Text('每次休息时长'),
                     trailing: BackChervonRow(
                         child: Obx(() => Text(
                             durationToString(_optionController.restTime),
@@ -288,7 +289,7 @@ class OptionPage extends StatelessWidget {
                           builder: (BuildContext context) {
                             return CupertinoAlertDialog(
                               title: const Text(
-                                '休息段时间长度',
+                                '每次休息时长',
                               ),
                               content: SizedBox(
                                 width: double.maxFinite,
@@ -321,7 +322,7 @@ class OptionPage extends StatelessWidget {
                     },
                   ),
                   CupertinoListTile(
-                    title: const Text('可用的工作时段'),
+                    title: const Text('可安排专注的时段'),
                     trailing: BackChervonRow(
                         child: Obx(() => Text(
                             '${_optionController.allowTimeLength} 个时段',
@@ -417,12 +418,12 @@ class OptionPage extends StatelessWidget {
                 margin: _defaultMargin,
                 header: Container(
                   padding: const EdgeInsets.only(left: 16),
-                  child: Text('诊断与测试', style: headerFooterTextStyle),
+                  child: Text('高级选项', style: headerFooterTextStyle),
                 ),
                 children: [
                   CupertinoListTile(
-                    title: const Text('测试日志'),
-                    subtitle: const Text('查看、复制或导出脱敏 TXT'),
+                    title: const Text('诊断日志'),
+                    subtitle: const Text('排查刷新问题，导出前自动隐藏敏感信息'),
                     trailing: const BackChervonRow(),
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
