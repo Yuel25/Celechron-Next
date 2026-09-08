@@ -116,6 +116,7 @@ class CourseBriefCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ))),
                         if (course.grade != null) ...{
+                          const SizedBox(width: 8),
                           Icon(
                             CupertinoIcons.checkmark_seal_fill,
                             size: 14,
@@ -125,7 +126,8 @@ class CourseBriefCard extends StatelessWidget {
                                 .color!
                                 .withValues(alpha: 0.5),
                           ),
-                          Text(
+                          Flexible(
+                            child: Text(
                               // grs is 90 / 100, ugrs is 4.0 / 5.0
                               ' 成绩：${course.grade!.original == "" ? course.grade!.hundredPoint : course.grade!.original}  / ${course.grade!.original == "" ? 100 : course.grade!.fivePoint.toStringAsFixed(1)}',
                               style: TextStyle(
@@ -136,8 +138,9 @@ class CourseBriefCard extends StatelessWidget {
                                     .textStyle
                                     .color!
                                     .withValues(alpha: 0.75),
-                                overflow: TextOverflow.ellipsis,
-                              )),
+                              ),
+                            ),
+                          ),
                         }
                       ]),
                       // 添加online和type字段的显示

@@ -1,6 +1,7 @@
 // Official packages
 import 'package:extended_sliver/extended_sliver.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:celechron/design/app_empty_state.dart';
 import 'package:celechron/page/scholar/course_list/course_brief_card.dart';
 import 'package:get/get.dart';
 
@@ -14,15 +15,16 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-        backgroundColor: CupertinoDynamicColor.resolve(
-            CupertinoColors.systemGroupedBackground, context),
-        child: SafeArea(
-            child: CustomScrollView(slivers: [
-          SliverPinnedToBoxAdapter(
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      child: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverPinnedToBoxAdapter(
               child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(children: [
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  children: [
                     Row(
                       children: [
                         Expanded(
@@ -54,10 +56,44 @@ class SearchPage extends StatelessWidget {
                             autofocus: true,
                           ),
                         ),
+                        CupertinoButton(
+                          padding: const EdgeInsets.only(left: 12),
+                          minimumSize: Size.zero,
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('取消'),
+                        ),
                       ],
-                    )
-                  ]))),
-          Obx(() => SliverList(
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Obx(() {
+              if (_searchController.searchWord.value.trim().isEmpty) {
+                return const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppEmptyState(
+                    icon: CupertinoIcons.search,
+                    title: '搜索课程与事项',
+                    message: '输入关键词搜索课程与事项',
+                    minHeight: 0,
+                  ),
+                );
+              }
+
+              if (_searchController.courseResult.isEmpty) {
+                return const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppEmptyState(
+                    icon: CupertinoIcons.doc_text_search,
+                    title: '未找到相关内容',
+                    message: '没有找到匹配的课程，请尝试其他关键词',
+                    minHeight: 0,
+                  ),
+                );
+              }
+
+              return SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => Container(
                     padding: index == 0
@@ -72,7 +108,11 @@ class SearchPage extends StatelessWidget {
                   ),
                   childCount: _searchController.courseResult.length,
                 ),
-              )),
-        ])));
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 }

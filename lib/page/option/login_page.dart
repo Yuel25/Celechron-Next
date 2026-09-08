@@ -5,13 +5,32 @@ import 'package:celechron/model/scholar.dart';
 
 import 'option_controller.dart';
 
-class LoginForm extends StatelessWidget {
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+class LoginForm extends StatefulWidget {
+  const LoginForm({super.key});
+
+  @override
+  State<LoginForm> createState() => _LoginFormState();
+}
+
+class _LoginFormState extends State<LoginForm> {
+  late final TextEditingController usernameController;
+  late final TextEditingController passwordController;
   final _optionController = Get.find<OptionController>(tag: 'optionController');
   final buttonPressed = false.obs;
 
-  LoginForm({super.key});
+  @override
+  void initState() {
+    super.initState();
+    usernameController = TextEditingController();
+    passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +107,8 @@ class LoginForm extends StatelessWidget {
                         )),
                     const SizedBox(height: 16),
                     Obx(() => CupertinoButton(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         onPressed: () async {
                           buttonPressed.value = true;
                           var scholar = Get.find<Rx<Scholar>>(tag: 'scholar');
@@ -134,16 +155,11 @@ class LoginForm extends StatelessWidget {
                         color: buttonPressed.value
                             ? CupertinoColors.inactiveGray
                             : CupertinoColors.activeBlue,
-                        child: SizedBox(
-                          height: 24,
-                          width: 60,
-                          child: Center(
-                              child: buttonPressed.value
-                                  ? const CupertinoActivityIndicator()
-                                  : const Text('登录',
-                                      style: TextStyle(
-                                          color: CupertinoColors.white))),
-                        ))),
+                        child: buttonPressed.value
+                            ? const CupertinoActivityIndicator()
+                            : const Text('登录',
+                                style: TextStyle(
+                                    color: CupertinoColors.white)))),
                   ],
                 ),
               ),

@@ -1,4 +1,5 @@
-import 'package:celechron/design/custom_colors.dart';
+import 'package:celechron/design/app_empty_state.dart';
+import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/utils/tuple.dart';
 import 'package:celechron/model/grade.dart';
 import 'package:celechron/model/semester.dart';
@@ -20,13 +21,19 @@ class GradeDetailPage extends StatelessWidget {
   }
 
   int getPairedSemesterIndex(int idx) {
+    if (idx < 0 || idx >= _gradeDetailController.semestersWithGrades.length) {
+      return idx;
+    }
+    final currentName = _gradeDetailController.semestersWithGrades[idx].name;
+    final currentKey =
+        currentName.length >= 5 ? currentName.substring(2, 5) : currentName;
     for (var i = 0;
         i < _gradeDetailController.semestersWithGrades.length;
         i++) {
-      if (i != idx &&
-          _gradeDetailController.semestersWithGrades[i].name.substring(2, 5) ==
-              _gradeDetailController.semestersWithGrades[idx].name
-                  .substring(2, 5)) {
+      final item = _gradeDetailController.semestersWithGrades[i];
+      final itemKey =
+          item.name.length >= 5 ? item.name.substring(2, 5) : item.name;
+      if (i != idx && itemKey == currentKey) {
         return i;
       }
     }
@@ -34,9 +41,16 @@ class GradeDetailPage extends StatelessWidget {
   }
 
   Tuple<List<double>, double> getYearStats(int semesterIndex) {
+    if (_gradeDetailController.semestersWithGrades.isEmpty ||
+        semesterIndex < 0 ||
+        semesterIndex >= _gradeDetailController.semestersWithGrades.length) {
+      return Tuple([0, 0, 0], 0);
+    }
     var s1 = _gradeDetailController.semestersWithGrades[semesterIndex];
     int another = getPairedSemesterIndex(semesterIndex);
-    if (another == semesterIndex) {
+    if (another == semesterIndex ||
+        another < 0 ||
+        another >= _gradeDetailController.semestersWithGrades.length) {
       return Tuple([s1.gpa[0], s1.gpa[1], s1.gpa[2]], s1.credits);
     }
     var s2 = _gradeDetailController.semestersWithGrades[another];
@@ -73,7 +87,7 @@ class GradeDetailPage extends StatelessWidget {
                                     .item2
                                     .toStringAsFixed(1),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.sand)),
+                                    AppVisual.fgSand)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -84,7 +98,7 @@ class GradeDetailPage extends StatelessWidget {
                                     .item1[0]
                                     .toStringAsFixed(2),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.sakura)),
+                                    AppVisual.fgSakura)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -100,7 +114,7 @@ class GradeDetailPage extends StatelessWidget {
                                     .item1[2]
                                     .toStringAsFixed(2),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.magenta)),
+                                    AppVisual.fgMagenta)),
                           ),
                         ],
                       ),
@@ -147,7 +161,7 @@ class GradeDetailPage extends StatelessWidget {
                                 title: '已选学分',
                                 content: inGpa.item2.toStringAsFixed(1),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.sand)),
+                                    AppVisual.fgSand)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -155,7 +169,7 @@ class GradeDetailPage extends StatelessWidget {
                                 title: '已选五分制',
                                 content: inGpa.item1[0].toStringAsFixed(2),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.sakura)),
+                                    AppVisual.fgSakura)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -164,7 +178,7 @@ class GradeDetailPage extends StatelessWidget {
                                 content: inGpa.item1[1].toStringAsFixed(2),
                                 extraContent: inGpa.item1[2].toStringAsFixed(2),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.magenta)),
+                                    AppVisual.fgMagenta)),
                           ),
                         ],
                       ),
@@ -176,7 +190,7 @@ class GradeDetailPage extends StatelessWidget {
                                 title: '已选百分制',
                                 content: inGpa.item1[3].toStringAsFixed(2),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.peach)),
+                                    AppVisual.fgPeach)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -184,7 +198,7 @@ class GradeDetailPage extends StatelessWidget {
                                 title: '未选五分制',
                                 content: notGpa.item1[0].toStringAsFixed(2),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.cyan)),
+                                    AppVisual.fgCyan)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -194,7 +208,7 @@ class GradeDetailPage extends StatelessWidget {
                                 extraContent:
                                     notGpa.item1[2].toStringAsFixed(2),
                                 backgroundColor:
-                                    CustomCupertinoDynamicColors.spring)),
+                                    AppVisual.fgSpring)),
                           ),
                         ],
                       ),
@@ -278,7 +292,7 @@ class GradeDetailPage extends StatelessWidget {
                                       backgroundColor: _gradeDetailController
                                                   .semesterIndex.value ==
                                               index
-                                          ? CustomCupertinoDynamicColors.cyan
+                                          ? AppVisual.fgCyan
                                           : CupertinoColors.systemFill,
                                     ),
                                   ),
@@ -396,8 +410,35 @@ class GradeDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          Obx(
-            () => SliverList(
+          Obx(() {
+            final semesters = _gradeDetailController.semestersWithGrades;
+            final semIdx = _gradeDetailController.semesterIndex.value;
+            if (semesters.isEmpty || semIdx < 0 || semIdx >= semesters.length) {
+              return const SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppEmptyState(
+                  icon: CupertinoIcons.doc_text,
+                  title: '暂无成绩',
+                  message: '本学期暂无成绩数据',
+                  minHeight: 0,
+                ),
+              );
+            }
+
+            final currentGrades = semesters[semIdx].grades;
+            if (currentGrades.isEmpty) {
+              return const SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppEmptyState(
+                  icon: CupertinoIcons.doc_text,
+                  title: '暂无成绩',
+                  message: '本学期暂无成绩数据',
+                  minHeight: 0,
+                ),
+              );
+            }
+
+            return SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   return Column(
@@ -407,10 +448,7 @@ class GradeDetailPage extends StatelessWidget {
                           const SizedBox(width: 18),
                           Expanded(
                             child: GradeCard(
-                              grade: _gradeDetailController
-                                  .semestersWithGrades[_gradeDetailController
-                                      .semesterIndex.value]
-                                  .grades[index],
+                              grade: currentGrades[index],
                             ),
                           ),
                           const SizedBox(width: 18),
@@ -420,14 +458,10 @@ class GradeDetailPage extends StatelessWidget {
                     ],
                   );
                 },
-                childCount: _gradeDetailController
-                    .semestersWithGrades[
-                        _gradeDetailController.semesterIndex.value]
-                    .grades
-                    .length,
+                childCount: currentGrades.length,
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );

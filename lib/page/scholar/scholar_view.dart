@@ -21,7 +21,7 @@ import 'exam_list/exam_list_view.dart';
 import 'grade_detail/grade_detail_view.dart';
 import 'practice_score/practice_score_page.dart';
 import 'scholar_controller.dart';
-import 'package:celechron/design/data_updated_label.dart';
+import 'package:celechron/widget/data_updated_label.dart';
 import 'package:celechron/page/option/option_controller.dart';
 
 Future<void> showRefreshResultDialog(
@@ -131,11 +131,7 @@ class ScholarErrorHandler extends StatelessWidget {
 }
 
 class ScholarPage extends StatelessWidget {
-  ScholarPage({super.key}) {
-    ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
-      return ScholarErrorHandler(errorDetails: errorDetails);
-    };
-  }
+  ScholarPage({super.key});
 
   final _scholarController = Get.put(ScholarController());
 

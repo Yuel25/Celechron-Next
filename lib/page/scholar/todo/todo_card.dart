@@ -1,3 +1,4 @@
+import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/model/todo.dart';
 import 'package:celechron/utils/utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,7 +15,7 @@ class TodoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppVisual.cardRadius),
         color: brightness == Brightness.dark
             ? CupertinoColors.secondarySystemFill
             : CupertinoColors.systemGroupedBackground,
@@ -56,9 +57,7 @@ class TodoCard extends StatelessWidget {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: brightness == Brightness.dark
-                      ? CupertinoColors.systemBackground
-                      : CupertinoTheme.of(context).textTheme.textStyle.color,
+                  color: CupertinoColors.label,
                 ),
           ),
           const SizedBox(height: 4),
@@ -67,9 +66,7 @@ class TodoCard extends StatelessWidget {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: brightness == Brightness.dark
-                      ? CupertinoColors.systemBackground
-                      : CupertinoTheme.of(context).textTheme.textStyle.color,
+                  color: CupertinoColors.secondaryLabel,
                 ),
           ),
         ],

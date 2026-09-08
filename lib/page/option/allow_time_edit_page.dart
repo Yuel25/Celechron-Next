@@ -273,10 +273,9 @@ class _AllowTimeEditPageState extends State<AllowTimeEditPage> {
 
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,
-      child: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            const CelechronSliverTextHeader(subtitle: '编辑可用工作时段'),
+      child: CustomScrollView(
+        slivers: [
+          const CelechronSliverTextHeader(subtitle: '编辑可用工作时段'),
             SliverList(
               delegate: SliverChildListDelegate([
                 CupertinoListSection.insetGrouped(
@@ -361,7 +360,6 @@ class _AllowTimeEditPageState extends State<AllowTimeEditPage> {
             ),
           ],
         ),
-      ),
     );
   }
 }

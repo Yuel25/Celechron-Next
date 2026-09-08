@@ -55,11 +55,11 @@ class OptionPage extends StatelessWidget {
         child: SafeArea(
             child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: SubtitleRow(
                 subtitle: '设置',
                 padHorizontal: 16,
-                padVertical: 4,
+                padVertical: 8,
                 fontSize: 32,
               ),
             ),
@@ -85,7 +85,7 @@ class OptionPage extends StatelessWidget {
                         CupertinoListTile(
                             title: Text(
                                 '已登录: ${_optionController.scholar.value.username}'),
-                            trailing: BackChervonRow(
+                            trailing: BackChevronRow(
                                 child: Text('退出',
                                     style: TextStyle(
                                         color: CupertinoDynamicColor.resolve(
@@ -149,7 +149,7 @@ class OptionPage extends StatelessWidget {
                                 ))),
                         CupertinoListTile(
                           title: const Text('自定义课程代码映射'),
-                          trailing: const BackChervonRow(),
+                          trailing: const BackChevronRow(),
                           onTap: () async {
                             Navigator.of(context, rootNavigator: true).push(
                                 CupertinoPageRoute(
@@ -196,7 +196,7 @@ class OptionPage extends StatelessWidget {
                           title: const Text('点击登录',
                               style:
                                   TextStyle(color: CupertinoColors.activeBlue)),
-                          trailing: const BackChervonRow(
+                          trailing: const BackChevronRow(
                             child: Text(''),
                           ),
                           onTap: () async {
@@ -204,7 +204,7 @@ class OptionPage extends StatelessWidget {
                             showCupertinoModalPopup(
                                 context: context,
                                 builder: (BuildContext context) {
-                                  return LoginForm();
+                                  return const LoginForm();
                                 });
                           },
                         ),
@@ -223,7 +223,7 @@ class OptionPage extends StatelessWidget {
                     children: <CupertinoListTile>[
                   CupertinoListTile(
                     title: const Text('每次专注时长'),
-                    trailing: BackChervonRow(
+                    trailing: BackChevronRow(
                         child: Obx(() => Text(
                             durationToString(_optionController.workTime),
                             style: TextStyle(
@@ -278,7 +278,7 @@ class OptionPage extends StatelessWidget {
                   ),
                   CupertinoListTile(
                     title: const Text('每次休息时长'),
-                    trailing: BackChervonRow(
+                    trailing: BackChevronRow(
                         child: Obx(() => Text(
                             durationToString(_optionController.restTime),
                             style: trailingTextStyle))),
@@ -323,7 +323,7 @@ class OptionPage extends StatelessWidget {
                   ),
                   CupertinoListTile(
                     title: const Text('可安排专注的时段'),
-                    trailing: BackChervonRow(
+                    trailing: BackChevronRow(
                         child: Obx(() => Text(
                             '${_optionController.allowTimeLength} 个时段',
                             style: trailingTextStyle))),
@@ -365,7 +365,7 @@ class OptionPage extends StatelessWidget {
                                     CupertinoColors.quaternaryLabel, context),
                           ),
                         ),
-                        trailing: BackChervonRow(
+                        trailing: BackChevronRow(
                             child: Text('选择学期',
                                 style: TextStyle(
                                     color: CupertinoDynamicColor.resolve(
@@ -381,7 +381,7 @@ class OptionPage extends StatelessWidget {
                       ),
                       CupertinoListTile(
                         title: const Text('导出为iCal文件'),
-                        trailing: const BackChervonRow(),
+                        trailing: const BackChevronRow(),
                         onTap: () =>
                             _optionController.showExportDialog(context),
                       ),
@@ -397,7 +397,7 @@ class OptionPage extends StatelessWidget {
                     children: <Widget>[
                   CupertinoListTile(
                     title: const Text('暗色模式'),
-                    trailing: BackChervonRow(
+                    trailing: BackChevronRow(
                         child: Obx(() => Text(
                               _optionController.brightnessMode ==
                                       BrightnessMode.system
@@ -424,7 +424,7 @@ class OptionPage extends StatelessWidget {
                   CupertinoListTile(
                     title: const Text('诊断日志'),
                     subtitle: const Text('排查刷新问题，导出前自动隐藏敏感信息'),
-                    trailing: const BackChervonRow(),
+                    trailing: const BackChevronRow(),
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
                         CupertinoPageRoute(
@@ -450,7 +450,7 @@ class OptionPage extends StatelessWidget {
                   children: <CupertinoListTile>[
                     CupertinoListTile(
                       title: const Text('关于 Celechron'),
-                      trailing: BackChervonRow(
+                      trailing: BackChevronRow(
                         child: Text(_optionController.celechronVersion,
                             style: trailingTextStyle),
                       ),
@@ -464,7 +464,7 @@ class OptionPage extends StatelessWidget {
                     ),
                     CupertinoListTile(
                       title: const Text('服务条款'),
-                      trailing: const BackChervonRow(),
+                      trailing: const BackChevronRow(),
                       onTap: () async {
                         Navigator.of(context, rootNavigator: true).push(
                             CupertinoPageRoute(
@@ -474,7 +474,7 @@ class OptionPage extends StatelessWidget {
                     ),
                     CupertinoListTile(
                       title: const Text('前往项目网站'),
-                      trailing: BackChervonRow(
+                      trailing: BackChevronRow(
                         child: Obx(() {
                           if (_optionController.hasNewVersion) {
                             return Row(children: [
@@ -547,10 +547,10 @@ class OptionPage extends StatelessWidget {
       EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 14.0);
 }
 
-class BackChervonRow extends StatelessWidget {
+class BackChevronRow extends StatelessWidget {
   final Widget? child;
 
-  const BackChervonRow({super.key, this.child});
+  const BackChevronRow({super.key, this.child});
 
   @override
   Widget build(BuildContext context) {

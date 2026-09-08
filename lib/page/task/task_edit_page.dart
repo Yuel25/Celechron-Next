@@ -13,7 +13,58 @@ class TaskEditPage extends StatefulWidget {
 
 class _TaskEditPageState extends State<TaskEditPage> {
   late Task now;
-  int __got = 0;
+  late final TextEditingController _summaryController;
+  late final TextEditingController _startTimeController;
+  late final TextEditingController _endTimeController;
+  late final TextEditingController _locationController;
+  late final TextEditingController _descriptionController;
+
+  String _formatStartTime(DateTime time) =>
+      '开始于 ${TimeHelper.chineseDateTime(time)}';
+
+  String _formatEndTime(DateTime time, TaskType type) =>
+      '${type == TaskType.deadline ? '截止于' : '结束于'} ${TimeHelper.chineseDateTime(time)}';
+
+  void _updateTimeText() {
+    final startText = _formatStartTime(now.startTime);
+    if (_startTimeController.text != startText) {
+      _startTimeController.text = startText;
+    }
+    final endText = _formatEndTime(now.endTime, now.type);
+    if (_endTimeController.text != endText) {
+      _endTimeController.text = endText;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    now = widget.deadline.copyWith();
+    if (now.startTime.isAfter(now.endTime)) {
+      now.startTime = now.endTime.add(const Duration(minutes: -1));
+    }
+    if (now.repeatEndsTime.isAfter(DateTime(2099, 1, 1)) ||
+        dateOnly(now.repeatEndsTime).isBefore(dateOnly(now.startTime))) {
+      now.repeatEndsTime = dateOnly(now.startTime);
+    }
+    _summaryController = TextEditingController(text: now.summary);
+    _startTimeController =
+        TextEditingController(text: _formatStartTime(now.startTime));
+    _endTimeController =
+        TextEditingController(text: _formatEndTime(now.endTime, now.type));
+    _locationController = TextEditingController(text: now.location);
+    _descriptionController = TextEditingController(text: now.description);
+  }
+
+  @override
+  void dispose() {
+    _summaryController.dispose();
+    _startTimeController.dispose();
+    _endTimeController.dispose();
+    _locationController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   void saveAndExit() {
     if (now.type == TaskType.fixed && !now.startTime.isBefore(now.endTime)) {
@@ -22,7 +73,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
         builder: (BuildContext context) {
           return CupertinoAlertDialog(
             title: const Text(
-              '开始时间必须晚于结束时间',
+              '开始时间必须早于结束时间',
             ),
             actions: [
               CupertinoDialogAction(
@@ -91,6 +142,9 @@ class _TaskEditPageState extends State<TaskEditPage> {
       }
     }
 
+    now.summary = _summaryController.text;
+    now.location = _locationController.text;
+    now.description = _descriptionController.text;
     FormState().save();
     now.forceRefreshStatus();
     Navigator.of(context).pop(now);
@@ -110,18 +164,6 @@ class _TaskEditPageState extends State<TaskEditPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (__got == 0) {
-      now = widget.deadline.copyWith();
-      if (now.startTime.isAfter(now.endTime)) {
-        now.startTime = now.endTime.add(const Duration(minutes: -1));
-      }
-      if (now.repeatEndsTime.isAfter(DateTime(2099, 1, 1)) ||
-          dateOnly(now.repeatEndsTime).isBefore(dateOnly(now.startTime))) {
-        now.repeatEndsTime = dateOnly(now.startTime);
-      }
-      __got = 1;
-    }
-
     List<String> deadlineRepeatTypeNameList = [];
     for (var i in TaskRepeatType.values) {
       deadlineRepeatTypeNameList.add(deadlineRepeatTypeName[i]!);
@@ -176,6 +218,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                           if (now.type == TaskType.fixed) {
                             now.status = TaskStatus.running;
                           }
+                          _updateTimeText();
                         });
                       }
                     },
@@ -186,7 +229,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                     CupertinoTextFormFieldRow(
                       placeholder: '任务名',
                       textAlign: TextAlign.left,
-                      controller: TextEditingController(text: now.summary),
+                      controller: _summaryController,
                       onChanged: (String value) {
                         now.summary = value;
                       },
@@ -195,9 +238,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                       CupertinoTextFormFieldRow(
                         placeholder: '开始时间',
                         textAlign: TextAlign.left,
-                        controller: TextEditingController(
-                            text:
-                                '开始于 ${TimeHelper.chineseDateTime(now.startTime)}'),
+                        controller: _startTimeController,
                         readOnly: true,
                         onTap: () async {
                           await showCupertinoModalPopup(
@@ -218,6 +259,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                                       onDateTimeChanged: (DateTime newTime) {
                                         setState(() {
                                           now.startTime = newTime;
+                                          _updateTimeText();
                                         });
                                       },
                                     ),
@@ -227,6 +269,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                           if (now.endTime.isBefore(now.startTime)) {
                             setState(() {
                               now.endTime = now.startTime;
+                              _updateTimeText();
                             });
                           }
                         },
@@ -234,9 +277,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                     CupertinoTextFormFieldRow(
                       placeholder: '结束时间',
                       textAlign: TextAlign.left,
-                      controller: TextEditingController(
-                          text:
-                              '${now.type == TaskType.deadline ? '截止于' : '结束于'} ${TimeHelper.chineseDateTime(now.endTime)}'),
+                      controller: _endTimeController,
                       readOnly: true,
                       onTap: () async {
                         await showCupertinoModalPopup(
@@ -257,6 +298,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                                     onDateTimeChanged: (DateTime newTime) {
                                       setState(() {
                                         now.endTime = newTime;
+                                        _updateTimeText();
                                       });
                                     },
                                   ),
@@ -267,6 +309,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                             now.startTime.isAfter(now.endTime)) {
                           setState(() {
                             now.startTime = now.endTime;
+                            _updateTimeText();
                           });
                         }
                       },
@@ -643,7 +686,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                     CupertinoTextFormFieldRow(
                       placeholder: '地点',
                       textAlign: TextAlign.left,
-                      controller: TextEditingController(text: now.location),
+                      controller: _locationController,
                       onChanged: (String value) {
                         now.location = value;
                       },
@@ -651,7 +694,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                     CupertinoTextFormFieldRow(
                       placeholder: '说明',
                       textAlign: TextAlign.left,
-                      controller: TextEditingController(text: now.description),
+                      controller: _descriptionController,
                       onChanged: (String value) {
                         now.description = value;
                       },

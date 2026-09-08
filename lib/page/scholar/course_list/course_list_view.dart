@@ -8,7 +8,8 @@ import 'package:celechron/design/persistent_headers.dart';
 import 'package:celechron/design/round_rectangle_card.dart';
 
 import 'package:celechron/design/animate_button.dart';
-import 'package:celechron/design/custom_colors.dart';
+import 'package:celechron/design/app_empty_state.dart';
+import 'package:celechron/design/app_visual.dart';
 import 'course_list_controller.dart';
 
 class CourseListPage extends StatelessWidget {
@@ -44,7 +45,7 @@ class CourseListPage extends StatelessWidget {
                             backgroundColor:
                                 _courseListController.semesterIndex.value ==
                                         index
-                                    ? CustomCupertinoDynamicColors.cyan
+                                    ? AppVisual.fgCyan
                                     : CupertinoColors.systemFill,
                           ),
                           const SizedBox(width: 90),
@@ -70,22 +71,35 @@ class CourseListPage extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
                 child: Obx(() => _semesterPicker(context))),
           ),
-          Obx(() => SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => Container(
-                    padding: index == 0
-                        ? const EdgeInsets.only(
-                            top: 0, bottom: 5, left: 16, right: 16)
-                        : const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 5),
-                    child: CourseBriefCard(
-                      course: _courseListController.courses[index],
-                      allowDirect: true,
-                    ),
-                  ),
-                  childCount: _courseListController.courses.length,
+          Obx(() {
+            if (_courseListController.courses.isEmpty) {
+              return const SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppEmptyState(
+                  icon: CupertinoIcons.book,
+                  title: '暂无课程',
+                  message: '当前学期没有课程',
+                  minHeight: 0,
                 ),
-              )),
+              );
+            }
+            return SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Container(
+                  padding: index == 0
+                      ? const EdgeInsets.only(
+                          top: 0, bottom: 5, left: 16, right: 16)
+                      : const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 5),
+                  child: CourseBriefCard(
+                    course: _courseListController.courses[index],
+                    allowDirect: true,
+                  ),
+                ),
+                childCount: _courseListController.courses.length,
+              ),
+            );
+          }),
         ],
       ),
     );

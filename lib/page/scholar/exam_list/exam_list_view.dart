@@ -1,6 +1,5 @@
 import 'package:extended_sliver/extended_sliver.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
@@ -9,7 +8,8 @@ import 'package:celechron/design/sub_title.dart';
 import 'package:celechron/design/persistent_headers.dart';
 import 'package:celechron/design/round_rectangle_card.dart';
 import 'package:celechron/design/animate_button.dart';
-import 'package:celechron/design/custom_colors.dart';
+import 'package:celechron/design/app_empty_state.dart';
+import 'package:celechron/design/app_visual.dart';
 
 import 'exam_list_controller.dart';
 
@@ -153,13 +153,11 @@ class _ExamListPageState extends State<ExamListPage> {
                   for (var i = 1; i < exams.length; i++)
                     Column(
                       children: [
-                        Divider(
-                          height: 16,
-                          thickness: 1,
-                          indent: 0,
-                          endIndent: 0,
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          height: 0.5,
                           color: CupertinoDynamicColor.resolve(
-                              CupertinoColors.systemFill, context),
+                              CupertinoColors.separator, context),
                         ),
                         Row(
                           children: [
@@ -310,7 +308,7 @@ class _ExamListPageState extends State<ExamListPage> {
                               backgroundColor:
                                   _examListController.semesterIndex.value ==
                                           index
-                                      ? CustomCupertinoDynamicColors.cyan
+                                      ? AppVisual.fgCyan
                                       : CupertinoColors.systemFill,
                             ),
                             const SizedBox(width: 90),
@@ -338,19 +336,32 @@ class _ExamListPageState extends State<ExamListPage> {
                     left: 16, right: 16, bottom: 10, top: 10),
                 child: _semesterPicker(context)),
           ),
-          Obx(() => SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => Container(
-                    padding: index == 0
-                        ? const EdgeInsets.only(
-                            top: 0, bottom: 5, left: 16, right: 16)
-                        : const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 5),
-                    child: _examCard(context, _examListController.exams[index]),
-                  ),
-                  childCount: _examListController.exams.length,
+          Obx(() {
+            if (_examListController.exams.isEmpty) {
+              return const SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppEmptyState(
+                  icon: CupertinoIcons.doc_text,
+                  title: '暂无考试',
+                  message: '近期没有考试安排',
+                  minHeight: 0,
                 ),
-              ))
+              );
+            }
+            return SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Container(
+                  padding: index == 0
+                      ? const EdgeInsets.only(
+                          top: 0, bottom: 5, left: 16, right: 16)
+                      : const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 5),
+                  child: _examCard(context, _examListController.exams[index]),
+                ),
+                childCount: _examListController.exams.length,
+              ),
+            );
+          })
         ],
       ),
     );

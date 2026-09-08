@@ -4,7 +4,6 @@ import 'package:celechron/design/custom_colors.dart';
 import 'package:celechron/design/persistent_headers.dart';
 import 'package:celechron/design/round_rectangle_card.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:celechron/model/course.dart';
 
@@ -26,7 +25,7 @@ class CourseDetailPage extends StatelessWidget {
     sessions.sort((a, b) => a.time.first.compareTo(b.time.first));
     return Column(
       children: [
-        SubSubtitleRow(subtitle: '课时'),
+        const SubSubtitleRow(subtitle: '课时'),
         RoundRectangleCard(
             child: Padding(
           padding: const EdgeInsets.only(left: 8, right: 8),
@@ -92,13 +91,11 @@ class CourseDetailPage extends StatelessWidget {
                     for (var i = 1; i < sessions.length; i++)
                       Column(
                         children: [
-                          Divider(
-                            height: 24,
-                            thickness: 1,
-                            indent: 0,
-                            endIndent: 0,
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 12),
+                            height: 0.5,
                             color: CupertinoDynamicColor.resolve(
-                                CupertinoColors.systemFill, context),
+                                CupertinoColors.separator, context),
                           ),
                           Row(
                             children: [
@@ -164,7 +161,7 @@ class CourseDetailPage extends StatelessWidget {
   Widget createExamCard(context, List<Exam> exams) {
     return Column(
       children: [
-        SubSubtitleRow(subtitle: '考试'),
+        const SubSubtitleRow(subtitle: '考试'),
         RoundRectangleCard(
             child: Padding(
           padding: const EdgeInsets.only(left: 8, right: 8),
@@ -278,13 +275,11 @@ class CourseDetailPage extends StatelessWidget {
                     for (var i = 1; i < exams.length; i++)
                       Column(
                         children: [
-                          Divider(
-                            height: 16,
-                            thickness: 1,
-                            indent: 0,
-                            endIndent: 0,
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            height: 0.5,
                             color: CupertinoDynamicColor.resolve(
-                                CupertinoColors.systemFill, context),
+                                CupertinoColors.separator, context),
                           ),
                           Row(
                             children: [
@@ -407,7 +402,7 @@ class CourseDetailPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 5, left: 16, right: 16),
               child: Column(
                 children: [
-                  SubSubtitleRow(subtitle: '基本信息'),
+                  const SubSubtitleRow(subtitle: '基本信息'),
                   CourseBriefCard(course: course),
                 ],
               ),

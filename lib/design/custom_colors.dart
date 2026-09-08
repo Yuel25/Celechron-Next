@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:celechron/design/app_visual.dart';
 
 class UidColors {
   static Color colorFromUid(String? uid) {
@@ -70,6 +71,8 @@ class TimeColors {
   }
 }
 
+/// 已废弃：旧版动态色集合，请迁移至 [AppVisual] 的前景强调色（如 [AppVisual.fgSpring] 等）或容器色令牌。
+@Deprecated('Use AppVisual foreground or container tokens instead.')
 class CustomCupertinoDynamicColors {
   static const CupertinoDynamicColor spring =
       CupertinoDynamicColor.withBrightness(

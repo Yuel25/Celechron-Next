@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:celechron/design/agenda_cards.dart';
+import 'package:celechron/widget/agenda_cards.dart';
 import 'package:celechron/design/round_rectangle_card.dart';
 import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/model/scholar.dart';

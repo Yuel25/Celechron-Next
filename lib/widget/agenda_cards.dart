@@ -4,8 +4,8 @@ import 'package:flutter/material.dart' show LinearProgressIndicator;
 import '../model/period.dart';
 import '../model/task.dart';
 import '../utils/utils.dart';
-import 'app_visual.dart';
-import 'round_rectangle_card.dart';
+import '../design/app_visual.dart';
+import '../design/round_rectangle_card.dart';
 
 String agendaTime(DateTime value, DateTime now) {
   final date = DateTime(value.year, value.month, value.day);

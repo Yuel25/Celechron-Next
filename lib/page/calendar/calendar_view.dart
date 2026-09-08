@@ -7,7 +7,6 @@ import 'package:celechron/page/task/task_controller.dart';
 import 'package:celechron/page/task/task_edit_page.dart';
 import 'package:celechron/page/flow/flow_controller.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:celechron/model/period.dart';
@@ -38,7 +37,7 @@ class CalendarPage extends StatelessWidget {
               () => SubtitleRow(
                 padHorizontal: 16,
                 padVertical: 8,
-                fontSize: 30,
+                fontSize: 32,
                 subtitle: _calendarController.viewMode.value ==
                         CalendarViewMode.calendar
                     ? '${_calendarController.focusedDay.value.year} 年 ${_calendarController.focusedDay.value.month} 月'
@@ -85,6 +84,29 @@ class CalendarPage extends StatelessWidget {
                       CalendarViewMode.schedule) {
                     return ScheduleView(controller: _calendarController);
                   }
+                  final calendarTextStyle =
+                      CupertinoTheme.of(context).textTheme.textStyle;
+                  final secondaryCalendarTextStyle =
+                      calendarTextStyle.copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                      CupertinoColors.secondaryLabel,
+                      context,
+                    ),
+                  );
+                  final tertiaryCalendarTextStyle =
+                      calendarTextStyle.copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                      CupertinoColors.tertiaryLabel,
+                      context,
+                    ),
+                  );
+                  final quaternaryCalendarTextStyle =
+                      calendarTextStyle.copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                      CupertinoColors.quaternaryLabel,
+                      context,
+                    ),
+                  );
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -123,6 +145,8 @@ class CalendarPage extends StatelessWidget {
                                 '六',
                                 '日'
                               ][date.weekday],
+                              weekdayStyle: secondaryCalendarTextStyle,
+                              weekendStyle: secondaryCalendarTextStyle,
                             ),
                             availableGestures: AvailableGestures.all,
                             availableCalendarFormats: const {
@@ -161,9 +185,7 @@ class CalendarPage extends StatelessWidget {
                                     context),
                                 shape: BoxShape.circle,
                               ),
-                              selectedTextStyle: CupertinoTheme.of(context)
-                                  .textTheme
-                                  .textStyle,
+                              selectedTextStyle: calendarTextStyle,
                               todayDecoration: BoxDecoration(
                                 color: CupertinoDynamicColor.resolve(
                                     CupertinoColors.inactiveGray
@@ -171,12 +193,15 @@ class CalendarPage extends StatelessWidget {
                                     context),
                                 shape: BoxShape.circle,
                               ),
-                              todayTextStyle: CupertinoTheme.of(context)
-                                  .textTheme
-                                  .textStyle,
-                              defaultTextStyle: CupertinoTheme.of(context)
-                                  .textTheme
-                                  .textStyle,
+                              todayTextStyle: calendarTextStyle,
+                              defaultTextStyle: calendarTextStyle,
+                              weekendTextStyle: calendarTextStyle,
+                              outsideTextStyle: tertiaryCalendarTextStyle,
+                              disabledTextStyle: quaternaryCalendarTextStyle,
+                              holidayTextStyle: calendarTextStyle,
+                              rangeStartTextStyle: calendarTextStyle,
+                              rangeEndTextStyle: calendarTextStyle,
+                              withinRangeTextStyle: calendarTextStyle,
                             ),
                             calendarBuilders: const CalendarBuilders(
                               singleMarkerBuilder: singleMarkerBuilder,
@@ -204,8 +229,11 @@ class CalendarPage extends StatelessWidget {
                                         horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                         border: Border.all(
-                                            color: CustomCupertinoDynamicColors
-                                                .okGreen.darkColor,
+                                            color:
+                                                CupertinoDynamicColor.resolve(
+                                              AppVisual.fgOkGreen,
+                                              context,
+                                            ),
                                             width: 1),
                                         borderRadius:
                                             BorderRadius.circular(10)),
@@ -215,8 +243,10 @@ class CalendarPage extends StatelessWidget {
                                           _calendarController.selectedDay.value
                                               .copyWith(isUtc: false)]!,
                                       style: TextStyle(
-                                          color: CustomCupertinoDynamicColors
-                                              .okGreen.darkColor,
+                                          color: CupertinoDynamicColor.resolve(
+                                            AppVisual.fgOkGreen,
+                                            context,
+                                          ),
                                           fontSize: 12),
                                     ),
                                   ),
@@ -314,7 +344,7 @@ class CalendarPage extends StatelessWidget {
   }
 
   Future<void> showCardDialog(BuildContext context, Task deadline) async {
-    return showDialog<void>(
+    return showCupertinoDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(

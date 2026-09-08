@@ -14,6 +14,8 @@ class TwoLineCard extends StatefulWidget {
   final bool transparent;
   final double? height;
   final double? width;
+  final Color? accentColor;
+  final String? semanticLabel;
 
   const TwoLineCard({
     super.key,
@@ -28,6 +30,8 @@ class TwoLineCard extends StatefulWidget {
     this.transparent = false,
     this.height,
     this.width,
+    this.accentColor,
+    this.semanticLabel,
   });
 
   static Widget dummy(String title, String content) =>
@@ -41,22 +45,37 @@ class _TwoLineCardState extends State<TwoLineCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  bool _isDown = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.animate) {
-      _animationController = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 140),
-        reverseDuration: const Duration(milliseconds: 160),
-      );
-      _scaleAnimation = Tween<double>(begin: 1, end: 0.98).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeInOut,
-        ),
-      );
+      _initAnimation();
+    }
+  }
+
+  void _initAnimation() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 140),
+      reverseDuration: const Duration(milliseconds: 160),
+    );
+    _scaleAnimation = Tween<double>(begin: 1, end: 0.98).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant TwoLineCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.animate && widget.animate) {
+      _initAnimation();
+    } else if (oldWidget.animate && !widget.animate) {
+      _animationController.dispose();
     }
   }
 
@@ -68,13 +87,35 @@ class _TwoLineCardState extends State<TwoLineCard>
     super.dispose();
   }
 
+  bool get isDown => _isDown;
+
+  void _handleTapDown(TapDownDetails _) {
+    _isDown = true;
+    if (widget.animate) {
+      _animationController.forward();
+    }
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    if (_isDown) {
+      _isDown = false;
+      if (widget.animate) {
+        _animationController.reverse();
+      }
+    }
+  }
+
+  void _handleTapCancel() {
+    if (_isDown) {
+      _isDown = false;
+      if (widget.animate) {
+        _animationController.reverse();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    var isDown = false;
-    var isCancel = false;
-    var brightness = CupertinoTheme.of(context).brightness ??
-        MediaQuery.of(context).platformBrightness;
-
     if (widget.transparent) {
       return Container(
         height: widget.height,
@@ -82,35 +123,32 @@ class _TwoLineCardState extends State<TwoLineCard>
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          // add a colored edge
           children: [
-            Text(widget.title,
-                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                      color: const Color.fromRGBO(0, 0, 0, 0),
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                    )),
+            Text(
+              widget.title,
+              style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                    color: const Color.fromRGBO(0, 0, 0, 0),
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
+                  ),
+            ),
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   widget.content,
-                  style:
-                      CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFeatures: [const FontFeature.tabularFigures()],
-                            color: const Color.fromRGBO(0, 0, 0, 0),
-                          ),
+                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFeatures: [const FontFeature.tabularFigures()],
+                        color: const Color.fromRGBO(0, 0, 0, 0),
+                      ),
                 ),
                 if (widget.extraContent != null)
                   Text(
                     ' / ${widget.extraContent}',
-                    style: CupertinoTheme.of(context)
-                        .textTheme
-                        .textStyle
-                        .copyWith(
+                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontSize: 12,
                           fontFeatures: [const FontFeature.tabularFigures()],
                           color: const Color.fromRGBO(0, 0, 0, 0),
@@ -123,21 +161,23 @@ class _TwoLineCardState extends State<TwoLineCard>
       );
     }
 
-    var core = Container(
+    final defaultTextColor =
+        CupertinoTheme.of(context).textTheme.textStyle.color;
+    final contentColor = widget.accentColor != null
+        ? CupertinoDynamicColor.resolve(widget.accentColor!, context)
+        : defaultTextColor;
+
+    final core = Container(
       height: widget.height,
       width: widget.width,
       padding: const EdgeInsets.all(AppVisual.cardPadding),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppVisual.cardRadius),
-        color: brightness == Brightness.dark
-            ? CupertinoColors.secondarySystemFill
-            : CupertinoDynamicColor.resolve(widget.backgroundColor, context),
-        // boxShadow
+        color: CupertinoDynamicColor.resolve(widget.backgroundColor, context),
         boxShadow: AppVisual.surfaceShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        // add a colored edge
         children: [
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -162,8 +202,11 @@ class _TwoLineCardState extends State<TwoLineCard>
                   height: 4,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: CupertinoDynamicColor.resolve(
-                          widget.backgroundColor, context),
+                      color: widget.accentColor != null
+                          ? CupertinoDynamicColor.resolve(
+                              widget.accentColor!, context)
+                          : CupertinoDynamicColor.resolve(
+                              widget.backgroundColor, context),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -177,35 +220,19 @@ class _TwoLineCardState extends State<TwoLineCard>
               children: [
                 Text(
                   widget.content,
-                  style:
-                      CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: (widget.withColoredFont &&
-                                    brightness == Brightness.dark)
-                                ? CupertinoDynamicColor.resolve(
-                                    widget.backgroundColor, context)
-                                : CupertinoTheme.of(context)
-                                    .textTheme
-                                    .textStyle
-                                    .color,
-                          ),
+                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: contentColor,
+                      ),
                 ),
                 if (widget.extraContent != null)
                   Text(
                     ' / ${widget.extraContent}',
-                    style:
-                        CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                              fontSize: 12,
-                              color: (widget.withColoredFont &&
-                                      brightness == Brightness.dark)
-                                  ? CupertinoDynamicColor.resolve(
-                                      widget.backgroundColor, context)
-                                  : CupertinoTheme.of(context)
-                                      .textTheme
-                                      .textStyle
-                                      .color,
-                            ),
+                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                          fontSize: 12,
+                          color: contentColor,
+                        ),
                   ),
               ],
             ),
@@ -214,34 +241,36 @@ class _TwoLineCardState extends State<TwoLineCard>
       ),
     );
 
-    return widget.animate
-        ? GestureDetector(
-            onTapDown: (_) async {
-              isDown = true;
-              isCancel = false;
-              _animationController.forward();
-              await Future.delayed(const Duration(milliseconds: 125));
-              isDown = false;
-              if (isCancel) {
-                _animationController.reverse();
-                isCancel = false;
-              }
-            },
-            onTapUp: (_) async {
-              isCancel = true;
-              if (!isDown) _animationController.reverse();
-            },
-            onTapCancel: () => _animationController.reverse(),
-            onTap: widget.onTap,
-            onLongPress: widget.onLongPress,
-            child: ScaleTransition(scale: _scaleAnimation, child: core),
-          )
-        : (widget.onTap == null && widget.onLongPress == null)
-            ? core
-            : GestureDetector(
-                onTap: widget.onTap != null ? () => widget.onTap!.call() : null,
-                onLongPress: widget.onLongPress,
-                child: core,
-              );
+    final hasAction = widget.onTap != null || widget.onLongPress != null;
+    Widget interactiveWidget;
+    if (hasAction) {
+      interactiveWidget = GestureDetector(
+        onTapDown: widget.animate ? _handleTapDown : null,
+        onTapUp: widget.animate ? _handleTapUp : null,
+        onTapCancel: widget.animate ? _handleTapCancel : null,
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: widget.animate
+            ? ScaleTransition(scale: _scaleAnimation, child: core)
+            : core,
+      );
+    } else {
+      interactiveWidget = widget.animate
+          ? ScaleTransition(scale: _scaleAnimation, child: core)
+          : core;
+    }
+
+    final effectiveSemanticLabel = widget.semanticLabel ??
+        (widget.extraContent != null
+            ? '${widget.title}，${widget.content} / ${widget.extraContent}'
+            : '${widget.title}，${widget.content}');
+
+    return Semantics(
+      button: hasAction,
+      enabled: hasAction,
+      label: effectiveSemanticLabel,
+      child: interactiveWidget,
+    );
   }
 }

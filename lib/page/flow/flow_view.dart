@@ -7,7 +7,7 @@ import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/model/period.dart';
 
 import 'package:celechron/design/sub_title.dart';
-import 'package:celechron/design/agenda_cards.dart';
+import 'package:celechron/widget/agenda_cards.dart';
 import 'package:celechron/page/scholar/course_detail/course_detail_view.dart';
 import 'flow_controller.dart';
 import 'planning_sheet.dart';
@@ -93,6 +93,7 @@ class FlowPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground,
       child: SafeArea(
         child: CustomScrollView(
           // Allow the list to shrink wrap around the top and bottom bars.

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/page/scholar/grade_detail/grade_detail_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -26,6 +27,7 @@ class _GradeCardState extends State<GradeCard>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   final _gradeDetailController = Get.find<GradeDetailController>();
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -54,50 +56,53 @@ class _GradeCardState extends State<GradeCard>
         (_gradeDetailController.customGpaSelected[widget.grade.id] ?? false);
   }
 
+  void _handleTapDown(TapDownDetails _) {
+    _isPressed = true;
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    if (_isPressed) {
+      _isPressed = false;
+      _animationController.reverse();
+    }
+  }
+
+  void _handleTapCancel() {
+    if (_isPressed) {
+      _isPressed = false;
+      _animationController.reverse();
+    }
+  }
+
+  void _handleTap() {
+    if (_gradeDetailController.customGpaMode.value) {
+      var cur = _gradeDetailController.customGpaSelected[widget.grade.id] ??
+          false;
+      _gradeDetailController.customGpaSelected[widget.grade.id] = !cur;
+    } else {
+      navigator!.push(CupertinoPageRoute(
+          builder: (context) =>
+              CourseDetailPage(courseId: widget.grade.id)));
+    }
+  }
+
+  void _handleLongPress() {
+    navigator!.push(CupertinoPageRoute(
+        builder: (context) => CourseDetailPage(courseId: widget.grade.id)));
+  }
+
   @override
   Widget build(BuildContext context) {
     var brightness = CupertinoTheme.of(context).brightness ??
         MediaQuery.of(context).platformBrightness;
-    var isDown = false;
-    var isCancel = false;
 
     return GestureDetector(
-      onTapDown: (_) async {
-        isDown = true;
-        isCancel = false;
-        if (_gradeDetailController.customGpaMode.value) {
-          var cur = _gradeDetailController.customGpaSelected[widget.grade.id] ??
-              false;
-          _gradeDetailController.customGpaSelected[widget.grade.id] = !cur;
-        }
-        _animationController.forward();
-        await Future.delayed(const Duration(milliseconds: 125));
-        isDown = false;
-        if (isCancel) {
-          if (!_gradeDetailController.customGpaMode.value) {
-            navigator!.push(CupertinoPageRoute(
-                builder: (context) =>
-                    CourseDetailPage(courseId: widget.grade.id)));
-          }
-          _animationController.reverse();
-          isCancel = false;
-        }
-      },
-      onTapUp: (_) async {
-        isCancel = true;
-        if (!isDown) _animationController.reverse();
-      },
-      onTapCancel: () async => _animationController.reverse(),
-      onLongPress: () async {
-        isDown = true;
-        isCancel = false;
-        _animationController.forward();
-        await Future.delayed(const Duration(milliseconds: 125));
-        isDown = false;
-        navigator!.push(CupertinoPageRoute(
-            builder: (context) => CourseDetailPage(courseId: widget.grade.id)));
-        _animationController.reverse();
-      },
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      onTap: _handleTap,
+      onLongPress: _handleLongPress,
       child: Obx(
         () => ScaleTransition(
           scale: _scaleAnimation,
@@ -105,21 +110,12 @@ class _GradeCardState extends State<GradeCard>
             padding:
                 const EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 8),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppVisual.cardRadius),
               color: brightness == Brightness.dark
                   ? CupertinoColors.systemFill
                   : CupertinoDynamicColor.resolve(
                       widget.backgroundColor, context),
-              // boxShadow
-              boxShadow: [
-                BoxShadow(
-                  // Only show shadow in light mode
-                  color: CupertinoColors.black.withValues(alpha: 0.1),
-                  spreadRadius: 0,
-                  blurRadius: 12,
-                  offset: const Offset(0, 6), // changes position of shadow
-                ),
-              ],
+              boxShadow: AppVisual.surfaceShadow,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

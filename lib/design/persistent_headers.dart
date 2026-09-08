@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -8,6 +9,7 @@ class CelechronSliverTextHeader extends StatelessWidget {
   final Widget? bottom;
   final double fontSize;
   final bool firstPage;
+  final String? heroTag;
 
   const CelechronSliverTextHeader({
     super.key,
@@ -16,6 +18,7 @@ class CelechronSliverTextHeader extends StatelessWidget {
     this.bottom,
     this.fontSize = 20,
     this.firstPage = false,
+    this.heroTag,
   });
 
   @override
@@ -29,6 +32,8 @@ class CelechronSliverTextHeader extends StatelessWidget {
         right: right,
         bottom: bottom,
         padding: MediaQuery.of(context).padding.top,
+        textScaler: MediaQuery.textScalerOf(context),
+        heroTag: heroTag,
       ),
     );
   }
@@ -41,6 +46,8 @@ class CelechronHeader extends SliverPersistentHeaderDelegate {
   final double padding;
   final double fontSize;
   final bool firstPage;
+  final String? heroTag;
+  final TextScaler textScaler;
 
   CelechronHeader({
     required this.subtitle,
@@ -49,11 +56,35 @@ class CelechronHeader extends SliverPersistentHeaderDelegate {
     required this.padding,
     this.fontSize = 20,
     this.firstPage = false,
+    this.heroTag,
+    this.textScaler = TextScaler.noScaling,
   });
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final Widget titleWidget = Column(
+      children: [
+        Text(
+          subtitle,
+          style: CupertinoTheme.of(context)
+              .textTheme
+              .navTitleTextStyle
+              .copyWith(
+                fontSize: fontSize - (bottom == null ? 0 : 2),
+              ),
+        ),
+        if (bottom != null) bottom!,
+      ],
+    );
+
+    final Widget heroOrTitle = heroTag != null
+        ? Hero(
+            tag: heroTag!,
+            child: titleWidget,
+          )
+        : titleWidget;
+
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(
@@ -96,24 +127,7 @@ class CelechronHeader extends SliverPersistentHeaderDelegate {
                       Container(
                         alignment: Alignment.center,
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Hero(
-                          tag: subtitle,
-                          child: Column(
-                            children: [
-                              Text(
-                                subtitle,
-                                style: CupertinoTheme.of(context)
-                                    .textTheme
-                                    .navTitleTextStyle
-                                    .copyWith(
-                                      fontSize:
-                                          fontSize - (bottom == null ? 0 : 2),
-                                    ),
-                              ),
-                              if (bottom != null) bottom!,
-                            ],
-                          ),
-                        ),
+                        child: heroOrTitle,
                       ),
                     ],
                   ),
@@ -129,11 +143,16 @@ class CelechronHeader extends SliverPersistentHeaderDelegate {
     );
   }
 
-  @override
-  double get minExtent => 48 + padding + (bottom == null ? 0 : 48);
+  double get _extent {
+    final double base = 48.0 + (bottom == null ? 0.0 : 48.0);
+    return math.max(base, textScaler.scale(base)) + padding;
+  }
 
   @override
-  double get maxExtent => 48 + padding + (bottom == null ? 0 : 48);
+  double get minExtent => _extent;
+
+  @override
+  double get maxExtent => _extent;
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {

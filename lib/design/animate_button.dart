@@ -4,12 +4,14 @@ class AnimateButton extends StatefulWidget {
   final String text;
   final VoidCallback? onTap;
   final CupertinoDynamicColor backgroundColor;
+  final String? semanticLabel;
 
   const AnimateButton({
     super.key,
     required this.text,
     this.onTap,
     this.backgroundColor = CupertinoColors.systemBackground,
+    this.semanticLabel,
   });
 
   @override
@@ -20,6 +22,7 @@ class _AnimateButtonState extends State<AnimateButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  bool _isDown = false;
 
   @override
   void initState() {
@@ -43,72 +46,77 @@ class _AnimateButtonState extends State<AnimateButton>
     super.dispose();
   }
 
+  bool get isDown => _isDown;
+
+  void _handleTapDown(TapDownDetails _) {
+    _isDown = true;
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    if (_isDown) {
+      _isDown = false;
+      _animationController.reverse();
+    }
+  }
+
+  void _handleTapCancel() {
+    if (_isDown) {
+      _isDown = false;
+      _animationController.reverse();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    var isDown = false;
-    var isCancel = false;
-    var brightness = CupertinoTheme.of(context).brightness ??
-        MediaQuery.of(context).platformBrightness;
+    final isClickable = widget.onTap != null;
 
-    return GestureDetector(
-      onTapDown: (_) async {
-        isDown = true;
-        isCancel = false;
-        _animationController.forward();
-        await Future.delayed(const Duration(milliseconds: 125));
-        isDown = false;
-        if (isCancel) {
-          _animationController.reverse();
-          isCancel = false;
-        }
-      },
-      onTapUp: (_) async {
-        isCancel = true;
-        if (!isDown) _animationController.reverse();
-      },
-      onTapCancel: () => _animationController.reverse(),
-      onTap: widget.onTap,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: brightness == Brightness.dark
-                ? CupertinoColors.secondarySystemFill
-                : CupertinoDynamicColor.resolve(
-                    widget.backgroundColor, context),
-            // boxShadow
-            boxShadow: const [
-              BoxShadow(
-                color: Color.fromRGBO(0, 0, 0, 0.05),
-                offset: Offset(0, 2),
-                blurRadius: 4,
-              ),
-            ],
+    final childWidget = Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: CupertinoDynamicColor.resolve(
+            widget.backgroundColor, context),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.05),
+            offset: Offset(0, 2),
+            blurRadius: 4,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            // add a colored edge
-            children: [
-              Text(
-                widget.text,
-                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: brightness == Brightness.dark
-                          ? CupertinoDynamicColor.resolve(
-                              widget.backgroundColor, context)
-                          : CupertinoTheme.of(context)
-                              .textTheme
-                              .textStyle
-                              .color,
-                    ),
-              ),
-            ],
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            widget.text,
+            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: CupertinoTheme.of(context)
+                      .textTheme
+                      .textStyle
+                      .color,
+                ),
           ),
+        ],
+      ),
+    );
+
+    return Semantics(
+      button: true,
+      enabled: isClickable,
+      label: widget.semanticLabel ?? widget.text,
+      child: GestureDetector(
+        onTapDown: isClickable ? _handleTapDown : null,
+        onTapUp: isClickable ? _handleTapUp : null,
+        onTapCancel: isClickable ? _handleTapCancel : null,
+        onTap: widget.onTap,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: childWidget,
         ),
       ),
     );

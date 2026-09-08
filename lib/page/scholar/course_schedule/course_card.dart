@@ -23,6 +23,7 @@ class _SessionCardState extends State<SessionCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -46,11 +47,27 @@ class _SessionCardState extends State<SessionCard>
     super.dispose();
   }
 
+  void _handleTapDown(TapDownDetails _) {
+    _isPressed = true;
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    if (_isPressed) {
+      _isPressed = false;
+      _animationController.reverse();
+    }
+  }
+
+  void _handleTapCancel() {
+    if (_isPressed) {
+      _isPressed = false;
+      _animationController.reverse();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    var isDown = false;
-    var isCancel = false;
-
     String sessionName = "";
     String sessionLocation = "";
     String sessionTeacher = "";
@@ -78,22 +95,9 @@ class _SessionCardState extends State<SessionCard>
     );
 
     return GestureDetector(
-      onTapDown: (_) async {
-        isDown = true;
-        isCancel = false;
-        _animationController.forward();
-        await Future.delayed(const Duration(milliseconds: 125));
-        isDown = false;
-        if (isCancel) {
-          _animationController.reverse();
-          isCancel = false;
-        }
-      },
-      onTapUp: (_) async {
-        isCancel = true;
-        if (!isDown) _animationController.reverse();
-      },
-      onTapCancel: () => _animationController.reverse(),
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
       onTap: () async {
         if (widget.sessionList.length == 1) {
           Navigator.of(context).push(

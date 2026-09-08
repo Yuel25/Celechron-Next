@@ -5,42 +5,54 @@ class SubtitleRow extends StatelessWidget {
   final Widget? right;
   final double padHorizontal;
   final double padVertical;
-  late final String heroTag = subtitle;
   final double fontSize;
+  final String? heroTag;
 
-  SubtitleRow(
-      {super.key,
-      required this.subtitle,
-      this.right,
-      this.padHorizontal = 2,
-      this.fontSize = 20,
-      this.padVertical = 12});
+  const SubtitleRow({
+    super.key,
+    required this.subtitle,
+    this.right,
+    this.padHorizontal = 2,
+    this.fontSize = 20,
+    this.padVertical = 12,
+    this.heroTag,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final textWidget = Text(
+      subtitle,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: CupertinoTheme.of(context)
+          .textTheme
+          .navLargeTitleTextStyle
+          .copyWith(fontSize: fontSize),
+    );
+
+    final titleWidget = heroTag != null
+        ? Hero(
+            tag: heroTag!,
+            child: textWidget,
+          )
+        : textWidget;
+
     return Padding(
-        padding: EdgeInsets.symmetric(horizontal: padHorizontal),
-        child: Row(children: [
+      padding: EdgeInsets.symmetric(horizontal: padHorizontal),
+      child: Row(
+        children: [
           Expanded(
             child: Container(
-                alignment: Alignment.centerLeft,
-                padding: EdgeInsets.symmetric(vertical: padVertical),
-                child: Hero(
-                  tag: heroTag,
-                  child: Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: CupertinoTheme.of(context)
-                        .textTheme
-                        .navLargeTitleTextStyle
-                        .copyWith(fontSize: fontSize),
-                  ),
-                )),
+              alignment: Alignment.centerLeft,
+              padding: EdgeInsets.symmetric(vertical: padVertical),
+              child: titleWidget,
+            ),
           ),
           const SizedBox(width: 8),
           right == null ? const SizedBox(height: 0) : right!,
-        ]));
+        ],
+      ),
+    );
   }
 }
 
@@ -48,35 +60,50 @@ class SubSubtitleRow extends StatelessWidget {
   final String subtitle;
   final Widget? right;
   final double padHorizontal;
-  late final String heroTag = subtitle;
+  final String? heroTag;
 
-  SubSubtitleRow(
-      {super.key, required this.subtitle, this.right, this.padHorizontal = 2});
+  const SubSubtitleRow({
+    super.key,
+    required this.subtitle,
+    this.right,
+    this.padHorizontal = 2,
+    this.heroTag,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final textWidget = Text(
+      subtitle,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: CupertinoTheme.of(context)
+          .textTheme
+          .navLargeTitleTextStyle
+          .copyWith(fontSize: 18),
+    );
+
+    final titleWidget = heroTag != null
+        ? Hero(
+            tag: heroTag!,
+            child: textWidget,
+          )
+        : textWidget;
+
     return Padding(
-        padding: EdgeInsets.symmetric(horizontal: padHorizontal),
-        child: Row(children: [
+      padding: EdgeInsets.symmetric(horizontal: padHorizontal),
+      child: Row(
+        children: [
           Expanded(
             child: Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Hero(
-                  tag: heroTag,
-                  child: Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: CupertinoTheme.of(context)
-                        .textTheme
-                        .navLargeTitleTextStyle
-                        .copyWith(fontSize: 18),
-                  ),
-                )),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: titleWidget,
+            ),
           ),
           const SizedBox(width: 8),
           right == null ? const SizedBox(height: 0) : right!,
-        ]));
+        ],
+      ),
+    );
   }
 }

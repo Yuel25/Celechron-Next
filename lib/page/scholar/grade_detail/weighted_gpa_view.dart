@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:celechron/design/custom_colors.dart';
+import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/design/round_rectangle_card.dart';
 import 'package:celechron/design/two_line_card.dart';
 import 'package:celechron/design/persistent_headers.dart';
@@ -66,7 +66,7 @@ class WeightedGpaPage extends StatelessWidget {
                           child: TwoLineCard(
                             title: '加权学分',
                             content: credits.toStringAsFixed(1),
-                            backgroundColor: CustomCupertinoDynamicColors.sand,
+                            backgroundColor: AppVisual.fgSand,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -74,8 +74,7 @@ class WeightedGpaPage extends StatelessWidget {
                           child: TwoLineCard(
                             title: '加权五分制',
                             content: gpa[0].toStringAsFixed(2),
-                            backgroundColor:
-                                CustomCupertinoDynamicColors.sakura,
+                            backgroundColor: AppVisual.fgSakura,
                           ),
                         ),
                       ],
@@ -122,7 +121,7 @@ class WeightedGpaPage extends StatelessWidget {
                           },
                           backgroundColor:
                               _controller.semesterIndex.value == index
-                                  ? CustomCupertinoDynamicColors.cyan
+                                  ? AppVisual.fgCyan
                                   : CupertinoColors.systemFill,
                         ),
                         if (index != _controller.semestersWithGrades.length - 1)
@@ -232,18 +231,11 @@ class WeightedGpaPage extends StatelessWidget {
                               padding: const EdgeInsets.only(
                                   left: 12, right: 12, bottom: 16, top: 8),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius:
+                                    BorderRadius.circular(AppVisual.cardRadius),
                                 color: CupertinoDynamicColor.resolve(
                                     CupertinoColors.systemBackground, context),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: CupertinoColors.black
-                                        .withValues(alpha: 0.1),
-                                    spreadRadius: 0,
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
+                                boxShadow: AppVisual.surfaceShadow,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,

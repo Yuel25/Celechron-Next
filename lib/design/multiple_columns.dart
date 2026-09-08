@@ -5,6 +5,7 @@ class MultipleColumns extends StatelessWidget {
   final List<String> titles;
   final List<VoidCallback?> onTaps;
   final Color color;
+  final List<String?>? semanticLabels;
 
   const MultipleColumns({
     super.key,
@@ -12,6 +13,7 @@ class MultipleColumns extends StatelessWidget {
     required this.titles,
     required this.onTaps,
     this.color = CupertinoColors.white,
+    this.semanticLabels,
   });
 
   @override
@@ -26,16 +28,22 @@ class MultipleColumns extends StatelessWidget {
           title: titles[i],
           onTap: onTaps[i],
           color: color,
+          semanticLabel: semanticLabels != null && i < semanticLabels!.length
+              ? semanticLabels![i]
+              : null,
         ),
       );
       children.add(const _VerticalLine(color: CupertinoColors.systemFill));
     }
-    children.removeLast();
+    if (children.isNotEmpty) {
+      children.removeLast();
+    }
 
     return SizedBox(
-        child: Row(
-      children: children,
-    ));
+      child: Row(
+        children: children,
+      ),
+    );
   }
 }
 
@@ -44,28 +52,48 @@ class _ColumnWidget extends StatelessWidget {
   final String title;
   final Color color;
   final VoidCallback? onTap;
+  final String? semanticLabel;
 
   const _ColumnWidget({
     required this.content,
     required this.title,
     required this.color,
     required this.onTap,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isClickable = onTap != null;
+    final effectiveLabel = semanticLabel ?? title;
+
+    final columnChild = Column(
+      children: [
+        content,
+        Text(
+          title,
+          style: const TextStyle(
+            color: CupertinoColors.systemGrey,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+
     return Expanded(
-        child: GestureDetector(
-            onTap: onTap,
-            behavior: HitTestBehavior.opaque,
-            child: Column(
-              children: [
-                content,
-                Text(title,
-                    style: const TextStyle(
-                        color: CupertinoColors.systemGrey, fontSize: 14)),
-              ],
-            )));
+      child: Semantics(
+        button: isClickable,
+        enabled: isClickable,
+        label: effectiveLabel,
+        child: isClickable
+            ? GestureDetector(
+                onTap: onTap,
+                behavior: HitTestBehavior.opaque,
+                child: columnChild,
+              )
+            : columnChild,
+      ),
+    );
   }
 }
 

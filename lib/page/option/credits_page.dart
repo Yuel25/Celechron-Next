@@ -113,10 +113,9 @@ class _CreditsPageState extends State<CreditsPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      child: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            const CelechronSliverTextHeader(subtitle: '关于'),
+      child: CustomScrollView(
+        slivers: [
+          const CelechronSliverTextHeader(subtitle: '关于'),
             SliverToBoxAdapter(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -259,7 +258,6 @@ class _CreditsPageState extends State<CreditsPage> {
             ),
           ],
         ),
-      ),
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:celechron/design/data_updated_label.dart';
+import 'package:celechron/widget/data_updated_label.dart';
 import 'package:celechron/page/flow/planning_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
