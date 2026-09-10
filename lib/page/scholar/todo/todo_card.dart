@@ -57,7 +57,7 @@ class TodoCard extends StatelessWidget {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: CupertinoColors.label,
+                  color: AppVisual.label(context),
                 ),
           ),
           const SizedBox(height: 4),
@@ -66,7 +66,7 @@ class TodoCard extends StatelessWidget {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: CupertinoColors.secondaryLabel,
+                  color: AppVisual.secondaryLabel(context),
                 ),
           ),
         ],

@@ -1,5 +1,21 @@
 import 'package:flutter/cupertino.dart';
 
+import 'package:celechron/design/app_visual.dart';
+
+/// 按字号映射到 [AppVisual] 排版令牌，保证一级/二级标题字重与字距一致。
+TextStyle _mappedTitleStyle(BuildContext context, double fontSize) {
+  final token = fontSize >= 30
+      ? AppVisual.largeTitle
+      : fontSize >= 17
+          ? AppVisual.sectionTitle
+          : AppVisual.body;
+  return CupertinoTheme.of(context)
+      .textTheme
+      .navLargeTitleTextStyle
+      .merge(token)
+      .copyWith(fontSize: fontSize);
+}
+
 class SubtitleRow extends StatelessWidget {
   final String subtitle;
   final Widget? right;
@@ -13,7 +29,7 @@ class SubtitleRow extends StatelessWidget {
     required this.subtitle,
     this.right,
     this.padHorizontal = 2,
-    this.fontSize = 20,
+    this.fontSize = 20, // 对齐 AppVisual.sectionTitle.fontSize
     this.padVertical = 12,
     this.heroTag,
   });
@@ -24,10 +40,7 @@ class SubtitleRow extends StatelessWidget {
       subtitle,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: CupertinoTheme.of(context)
-          .textTheme
-          .navLargeTitleTextStyle
-          .copyWith(fontSize: fontSize),
+      style: _mappedTitleStyle(context, fontSize),
     );
 
     final titleWidget = heroTag != null
@@ -76,10 +89,7 @@ class SubSubtitleRow extends StatelessWidget {
       subtitle,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: CupertinoTheme.of(context)
-          .textTheme
-          .navLargeTitleTextStyle
-          .copyWith(fontSize: 18),
+      style: _mappedTitleStyle(context, 18),
     );
 
     final titleWidget = heroTag != null

@@ -43,7 +43,10 @@ class AppEmptyState extends StatelessWidget {
                 child: Icon(
                   icon,
                   size: 28,
-                  color: AppVisual.brand,
+                  color: CupertinoDynamicColor.resolve(
+                    AppVisual.brand,
+                    context,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -58,9 +61,9 @@ class AppEmptyState extends StatelessWidget {
               const SizedBox(height: 7),
               Text(
                 message,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: CupertinoColors.secondaryLabel,
+                  color: AppVisual.secondaryLabel(context),
                 ),
                 textAlign: TextAlign.center,
               ),

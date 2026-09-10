@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
+import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/utils/global.dart';
 
 class ImageCodePortal {
@@ -132,11 +133,11 @@ class _CaptchaDialogState extends State<_CaptchaDialog> {
               label: "点击刷新验证码",
               child: GestureDetector(
                 onTap: _refresh,
-                child: const Text(
+                child: Text(
                   "点击图片刷新",
                   style: TextStyle(
                     fontSize: 12,
-                    color: CupertinoColors.secondaryLabel,
+                    color: AppVisual.secondaryLabel(context),
                   ),
                 ),
               ),

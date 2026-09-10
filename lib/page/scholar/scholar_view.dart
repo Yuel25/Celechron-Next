@@ -739,8 +739,8 @@ class ScholarPage extends StatelessWidget {
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: selected
-                                            ? CupertinoColors.white
-                                            : CupertinoColors.label,
+                                            ? AppVisual.onBrand(context)
+                                            : AppVisual.label(context),
                                       ),
                                     ),
                                   ),

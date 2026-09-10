@@ -119,8 +119,7 @@ class _RoundRectangleCardState extends State<RoundRectangleCard>
             ? brightness == Brightness.dark
                 ? CupertinoDynamicColor.resolve(
                     CupertinoColors.secondarySystemBackground, context)
-                : CupertinoDynamicColor.resolve(
-                    CupertinoColors.white, context)
+                : CupertinoDynamicColor.resolve(CupertinoColors.white, context)
             : CupertinoDynamicColor.resolve(widget.color!, context),
       ),
       child: widget.child,

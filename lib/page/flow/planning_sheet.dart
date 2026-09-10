@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import '../../design/app_visual.dart';
 import '../../utils/utils.dart';
 
@@ -27,6 +28,7 @@ class _PlanningSheetState extends State<PlanningSheet> {
   bool _busy = false;
   String? _error;
   int? _result;
+  Timer? _autoCloseTimer;
   DateTime get _now => (widget.now ?? DateTime.now)();
 
   @override
@@ -35,6 +37,21 @@ class _PlanningSheetState extends State<PlanningSheet> {
     _start = _now
         .add(const Duration(minutes: 2))
         .copyWith(second: 0, millisecond: 0, microsecond: 0);
+  }
+
+  @override
+  void dispose() {
+    _autoCloseTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleAutoClose() {
+    _autoCloseTimer?.cancel();
+    _autoCloseTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted && _result != null) {
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   Future<void> _generate() async {
@@ -57,6 +74,11 @@ class _PlanningSheetState extends State<PlanningSheet> {
           _result = result;
         }
       });
+      if (result >= 0) {
+        HapticFeedback.lightImpact();
+        // 成功后短暂展示结果摘要，再自动关闭，让用户直接看到「接下来」
+        _scheduleAutoClose();
+      }
     } on Object {
       if (mounted) setState(() => _error = '暂时无法完成规划，请稍后重试。');
     } finally {
@@ -77,6 +99,19 @@ class _PlanningSheetState extends State<PlanningSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // iOS sheet grabber：提示可下拉关闭
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: CupertinoDynamicColor.resolve(
+                          CupertinoColors.systemFill, context),
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
+                  ),
+                ),
                 Row(children: [
                   const Expanded(
                       child: Text('安排专注时间',

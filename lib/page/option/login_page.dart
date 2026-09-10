@@ -158,8 +158,8 @@ class _LoginFormState extends State<LoginForm> {
                         child: buttonPressed.value
                             ? const CupertinoActivityIndicator()
                             : const Text('登录',
-                                style: TextStyle(
-                                    color: CupertinoColors.white)))),
+                                style:
+                                    TextStyle(color: CupertinoColors.white)))),
                   ],
                 ),
               ),

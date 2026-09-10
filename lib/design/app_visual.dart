@@ -218,4 +218,31 @@ abstract final class AppVisual {
         ),
         width: 0.5,
       );
+
+  /// 解析后的语义文字色。未 resolve 的 [CupertinoDynamicColor] 会一直取亮色值，
+  /// 暗色模式下近黑字叠在深底上几乎不可读。
+  static Color label(BuildContext context) =>
+      CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+
+  static Color secondaryLabel(BuildContext context) =>
+      CupertinoDynamicColor.resolve(CupertinoColors.secondaryLabel, context);
+
+  static Color tertiaryLabel(BuildContext context) =>
+      CupertinoDynamicColor.resolve(CupertinoColors.tertiaryLabel, context);
+
+  /// 暗色模式下卡片阴影几乎不可见且发灰，统一关闭。
+  static List<BoxShadow> shadowFor(BuildContext context) {
+    final brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    return brightness == Brightness.dark ? const [] : surfaceShadow;
+  }
+
+  /// 品牌色底上的前景：亮色用白字，暗色品牌偏亮，改用近黑以保证对比度。
+  static Color onBrand(BuildContext context) {
+    final brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    return brightness == Brightness.dark
+        ? CupertinoColors.black
+        : CupertinoColors.white;
+  }
 }

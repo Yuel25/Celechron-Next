@@ -5,6 +5,7 @@ import 'package:celechron/http/zjuServices/exceptions.dart';
 import 'package:celechron/page/option/option_controller.dart';
 import 'package:celechron/services/diagnostic_log_service.dart';
 import 'package:celechron/services/refresh_coordinator.dart';
+import 'package:celechron/utils/grade_grouping.dart';
 import 'package:celechron/utils/json_utils.dart';
 import 'package:celechron/model/practice_score_item.dart';
 
@@ -18,15 +19,19 @@ import 'package:celechron/http/ugrs_spider.dart';
 import 'package:celechron/http/grs_spider.dart';
 import 'package:celechron/database/database_helper.dart';
 
+part 'scholar_json.dart';
+part 'scholar_sync.dart';
+
+/// 学业领域数据模型。登录/刷新编排在 [ScholarSyncService]（part），
+/// 序列化在 scholar_json.dart（part）；对外仍保留 login/refresh 薄封装。
 class Scholar {
-  Scholar();
+  Scholar() {
+    _sync = ScholarSyncService(this);
+  }
 
   // 构造用户对象
-  DatabaseHelper? _db;
-
-  set db(DatabaseHelper? db) {
-    _db = db;
-  }
+  DatabaseHelper? db;
+  late final ScholarSyncService _sync;
 
   // 登录状态
   bool isLogan = false;
@@ -34,12 +39,16 @@ class Scholar {
   DateTime lastUpdateTimeCourse = DateTime.parse("20010101");
   DateTime lastUpdateTimeHomework = DateTime.parse("20010101");
 
-  // 爬虫区
+  // 凭据真源在 secure storage；Hive JSON 字段仅为 <=0.2.6 兼容读取。
   String? username;
   String? password;
-  Spider? _spider;
 
-  bool get isGrs => !username!.startsWith('3');
+  bool get isGrs {
+    final id = username;
+    if (id == null || id.isEmpty) return false;
+    // 浙大本科学号以 3 开头；研究生等其它培养层次不以 3 开头。
+    return !id.startsWith('3');
+  }
 
   // 按学期整理好的学业信息，包括该学期的所有科目、考试、课表、均绩等
   List<Semester> semesters = <Semester>[];
@@ -119,40 +128,10 @@ class Scholar {
     return false;
   }
 
-  // 初始化以获取Cookies，并刷新数据
   Future<List<String?>> login({
     RefreshOrigin origin = RefreshOrigin.foreground,
   }) {
-    return DiagnosticLogService.instance.runRefresh(
-      origin: origin,
-      action: () => RefreshCoordinator.run(
-        account: username ?? '<unknown>',
-        operation: 'login',
-        origin: origin,
-        refreshId: DiagnosticLogService.instance.currentRefreshId ?? 'unknown',
-        action: _loginInternal,
-      ),
-    );
-  }
-
-  Future<List<String?>> _loginInternal() async {
-    if (username == null || password == null) {
-      return ["未登录"];
-    }
-    if (username == '3200000000') {
-      _spider = MockSpider();
-    } else if (!isGrs) {
-      _spider = UgrsSpider(username!, password!);
-    } else {
-      _spider = GrsSpider(username!, password!);
-    }
-    _spider!.db = _db;
-    var loginErrorMessage = await _spider!.login();
-    if (loginErrorMessage.every((e) => e == null)) {
-      isLogan = true;
-      _db?.setScholar(this);
-    }
-    return loginErrorMessage;
+    return _sync.login(origin: origin);
   }
 
   Future<bool> logout() async {
@@ -181,221 +160,24 @@ class Scholar {
     lastUpdateTimeGrade = DateTime.parse("20010101");
     lastUpdateTimeCourse = DateTime.parse("20010101");
     lastUpdateTimeHomework = DateTime.parse("20010101");
-    _spider?.logout();
-    await _db?.removeScholar();
-    await _db?.removeAllCachedWebPage();
+    _sync.disposeSession();
+    await db?.removeScholar();
+    await db?.removeAllCachedWebPage();
     return true;
   }
 
-  // 刷新数据
   Future<List<String?>> refresh({
     RefreshOrigin origin = RefreshOrigin.foreground,
     void Function()? onPartialUpdate,
     void Function(List<ModuleFetchStatus> statuses)? onFetchStatus,
     void Function()? onBackgroundYield,
-  }) async {
-    return DiagnosticLogService.instance.runRefresh(
+  }) {
+    return _sync.refresh(
       origin: origin,
-      action: () => RefreshCoordinator.run(
-        account: username ?? '<unknown>',
-        operation: 'refresh',
-        origin: origin,
-        refreshId: DiagnosticLogService.instance.currentRefreshId ?? 'unknown',
-        action: () async {
-          // 从数据库恢复的 Scholar 只有缓存的登录标记，没有可持久化的 Spider
-          // 会话。把会话重建纳入完整刷新，启动自动刷新与手动刷新才能共享
-          // 同一个 refresh Future。
-          if (!isLogan || _spider == null) {
-            final loginErrors = await _loginInternal();
-            if (loginErrors.any((error) => error != null)) {
-              return loginErrors;
-            }
-          }
-          // Workmanager 可能略早于前台 main isolate 启动。后台完成登录后
-          // 再检查一次前台租约，避免继续发起整套模块抓取并长期占锁。
-          if (origin == RefreshOrigin.background &&
-              await RefreshCoordinator.shouldYieldBackground()) {
-            DiagnosticLogService.instance.record(
-              module: 'refresh',
-              operation: 'backgroundYield',
-              message: '后台刷新登录完成后检测到活跃前台，已正常让行',
-            );
-            onBackgroundYield?.call();
-            return <String?>[];
-          }
-          return _refreshInternal(
-            onPartialUpdate: onPartialUpdate,
-            onFetchStatus: onFetchStatus,
-          );
-        },
-        backgroundYieldResult: () {
-          onBackgroundYield?.call();
-          return <String?>[];
-        },
-      ),
+      onPartialUpdate: onPartialUpdate,
+      onFetchStatus: onFetchStatus,
+      onBackgroundYield: onBackgroundYield,
     );
-  }
-
-  Future<List<String?>> _refreshInternal({
-    void Function()? onPartialUpdate,
-    void Function(List<ModuleFetchStatus> statuses)? onFetchStatus,
-  }) async {
-    if (!isLogan) {
-      return ["未登录"];
-    }
-    try {
-      // 异步刷新：每完成一部分抓取就先合并进内存并通知界面，
-      // 全部完成后仍会走下面的完整合并（含实践学分、时间戳、持久化与报错）
-      var useAsyncRefresh =
-          onPartialUpdate != null && (_db?.getAsyncRefresh() ?? false);
-      // 刷新状态文案：与数据合并解耦，只要有人监听就照常上报各模块进度，
-      // 不受异步刷新开关影响；后台刷新两个回调都不传，行为与原来完全一致
-      var fetchLabels = _spider?.fetchLabels ?? const <String>[];
-      void emitStatuses(List<String?> fetchErrors) {
-        if (onFetchStatus == null || fetchLabels.isEmpty) return;
-        try {
-          var statuses = moduleStatusesFromErrors(fetchErrors, fetchLabels);
-          if (statuses.isNotEmpty) onFetchStatus(statuses);
-        } catch (e) {
-          // 状态上报失败不影响刷新本身
-          // ignore: avoid_print
-          print('fetch status error: $e');
-        }
-      }
-
-      // 起始状态：全部「进行中」（覆盖登录阶段，此时尚无任何任务完成回调）
-      if (onFetchStatus != null && fetchLabels.isNotEmpty) {
-        onFetchStatus([
-          for (var label in fetchLabels)
-            ModuleFetchStatus(label, FetchModuleState.pending)
-        ]);
-      }
-      var wantProgress = useAsyncRefresh || onFetchStatus != null;
-      return await _spider
-              ?.getEverything(
-                  onProgress: wantProgress
-                      ? (partial) {
-                          if (useAsyncRefresh) {
-                            try {
-                              _applyFetchResult(partial, partial: true);
-                              // 已成功板块立即打上“更新于”时间戳；
-                              // 未完成/失败的板块被 updateLastUpdateTime 的
-                              // 关键字守卫（“查询进行中”/“查询出错”）拦下
-                              if (partial.item1.every((e) => e == null)) {
-                                updateLastUpdateTime(partial.item2);
-                              }
-                              onPartialUpdate();
-                            } catch (e) {
-                              // 中间态合并失败不影响整体刷新，最终合并会兜底
-                              // ignore: avoid_print
-                              print('partial refresh error: $e');
-                            }
-                          }
-                          emitStatuses(partial.item2);
-                        }
-                      : null)
-              .then((value) async {
-            for (var e in value.item1) {
-              if (e != null) {
-                DiagnosticLogService.instance.record(
-                  level: CelechronLogLevel.warning,
-                  module: '登录',
-                  operation: 'result',
-                  message: e,
-                );
-              }
-            }
-            for (var e in value.item2) {
-              if (e != null) {
-                DiagnosticLogService.instance.record(
-                  level: isDegradedRefreshText(e)
-                      ? CelechronLogLevel.warning
-                      : CelechronLogLevel.error,
-                  module: '刷新聚合',
-                  operation: 'moduleResult',
-                  message: e,
-                );
-              }
-            }
-            if (value.item1.every((e) => e == null)) {
-              updateLastUpdateTime(value.item2);
-            }
-            _applyFetchResult(value);
-
-            // 终态补发：最后完成的模块不会触发 onProgress，只能在这里定论
-            emitStatuses(value.item2);
-
-            await _db?.setScholar(this);
-            return value.item2;
-          }) ??
-          ['未登录'];
-    } on Object catch (error, stackTrace) {
-      // 网络异常等情况下保留已有数据，不清空
-      final exception = exceptionFrom(
-        error,
-        context: '刷新聚合',
-        stackTrace: stackTrace,
-      );
-      return [exception.toString()];
-    }
-  }
-
-  // 把一次抓取结果合并进当前对象。partial 为 true 表示异步刷新的中间态：
-  // 空数据、有报错或尚未抓完的部分会被 setScholar 的守卫拦下，保留原值；
-  // 实践学分成功与否要等全部抓完才能判定，中间态一律保持不变。
-  void _applyFetchResult(EverythingTuple value, {bool partial = false}) {
-    final tempGrades = <String, List<Grade>>{};
-    final courseIdMappingList =
-        Get.find<OptionController>(tag: 'optionController').courseIdMappingList;
-    final courseIdMappingMap = {
-      for (final mapping in courseIdMappingList) mapping.id1: mapping.id2
-    };
-    for (final grade in value.item4) {
-      try {
-        final matchClass = RegExp(r'(\(.*\)-(.*?))-.*').firstMatch(grade.id);
-        if (matchClass == null && grade.id.length < 22) {
-          throw const FormatException('成绩课程编号长度不足');
-        }
-        var key = matchClass?.group(2) ?? grade.id.substring(14, 22);
-        if (key.startsWith('PPAE') || key.startsWith('401')) {
-          key = matchClass?.group(1) ?? grade.id.substring(0, 22);
-        }
-        key = courseIdMappingMap[key] ?? key;
-        tempGrades.putIfAbsent(key, () => <Grade>[]).add(grade);
-      } on Object catch (error, stackTrace) {
-        if (kDebugMode) {
-          debugPrint(
-              '跳过无法归类的成绩 ${grade.id}：${error.runtimeType}: $error\n$stackTrace');
-        }
-      }
-    }
-
-    PracticeScoreSnapshot? tempPracticeSnapshot;
-    if (!partial && _spider is UgrsSpider && !isGrs) {
-      tempPracticeSnapshot = (_spider as UgrsSpider).practiceSnapshot;
-    }
-
-    setScholar(value.item2, value.item3, tempGrades, value.item5, value.item6,
-        tempPracticeSnapshot);
-
-    // 保研成绩，只取第一次
-    var netGrades = grades.values.map((e) => e.first);
-    if (netGrades.isNotEmpty) {
-      gpa = GpaHelper.calculateGpa(netGrades).item1;
-    }
-    // 出国成绩，取最高的一次
-    var aboardNetGrades = grades.values.map((e) {
-      e.sort((a, b) => a.hundredPoint.compareTo(b.hundredPoint));
-      return e.last;
-    });
-    if (aboardNetGrades.isNotEmpty) {
-      var result = GpaHelper.calculateGpa(aboardNetGrades);
-      aboardGpa = result.item1;
-      // 所获学分，不包括挂科的。
-      credit = result.item2;
-    } else {
-      credit = 0.0;
-    }
   }
 
   void updateLastUpdateTime(List<String?> errorMessage) {
@@ -497,59 +279,10 @@ class Scholar {
     }
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'semesters': semesters,
-      'grades': grades,
-      'gpa': gpa,
-      'aboardGpa': aboardGpa,
-      'credit': credit,
-      'specialDates':
-          specialDates.map((k, v) => MapEntry(k.toIso8601String(), v)),
-      'lastUpdateTimeGrade': lastUpdateTimeGrade.toIso8601String(),
-      'lastUpdateTimeCourse': lastUpdateTimeCourse.toIso8601String(),
-      'lastUpdateTimeHomework': lastUpdateTimeHomework.toIso8601String(),
-      'todos': todos,
-      'pt2': pt2,
-      'pt3': pt3,
-      'pt4': pt4,
-      'isPracticeScoresGet': isPracticeScoresGet,
-      'practiceScoreItems':
-          practiceScoreItems.map((item) => item.toJson()).toList(),
-      'practiceDataSource': practiceDataSource.name,
-      'practiceSummarySource': practiceSummarySource.name,
-      'practiceUpdatedAt': practiceUpdatedAt?.toIso8601String(),
-      'practiceDetailsUpdatedAt': practiceDetailsUpdatedAt?.toIso8601String(),
-      'practiceDetailsAvailable': practiceDetailsAvailable,
-      'practiceDetailsStale': practiceDetailsStale,
-      'practiceSummaryStale': practiceSummaryStale,
-      'practiceMyPassed': practiceMyPassed,
-      'practiceLyPassed': practiceLyPassed,
-    };
-  }
+  Map<String, dynamic> toJson() => buildScholarToJson(this);
 
-  Future<void> recalculateGpa() async {
-    grades =
-        grades.values.expand((e) => e).fold(<String, List<Grade>>{}, (p, e) {
-      // 体育课
-      var matchClass = RegExp(r'(\(.*\)-(.*?))-.*').firstMatch(e.id);
-      var key = matchClass?.group(2) ?? e.id.substring(14, 22);
-      if (key.startsWith('PPAE') || key.startsWith('401')) {
-        key = matchClass?.group(1) ?? e.id.substring(0, 22);
-      }
-      var courseIdMappingList =
-          Get.find<OptionController>(tag: 'optionController')
-              .courseIdMappingList;
-      var courseIdMappingMap = {
-        for (var e in courseIdMappingList) e.id1: e.id2
-      };
-      if (courseIdMappingMap.containsKey(key)) {
-        key = courseIdMappingMap[key]!;
-      }
-      p.putIfAbsent(key, () => <Grade>[]).add(e);
-      return p;
-    });
-
+  /// 按当前 [grades] 重算保研/出国 GPA 与学分，不触发持久化。
+  void recomputeGpaFromGrades() {
     // 保研成绩，只取第一次
     var netGrades = grades.values.map((e) => e.first);
     if (netGrades.isNotEmpty) {
@@ -568,154 +301,25 @@ class Scholar {
     } else {
       credit = 0.0;
     }
+  }
 
-    await _db?.setScholar(this);
+  Future<void> recalculateGpa() async {
+    final courseIdMappingMap = {
+      for (final mapping in Get.find<OptionController>(tag: 'optionController')
+          .courseIdMappingList)
+        mapping.id1: mapping.id2
+    };
+    grades = groupGradesByCourseKey(
+      grades.values.expand((e) => e),
+      courseIdMappingMap,
+    );
+
+    recomputeGpaFromGrades();
+    await db?.setScholar(this);
   }
 
   Scholar.fromJson(Map<String, dynamic> json) {
-    username = asString(json['username']); // <=0.2.6 Compatibility
-    password = asString(json['password']); // <=0.2.6 Compatibility
-
-    semesters = [];
-    for (final rawSemester in asDynamicList(json['semesters']) ?? const []) {
-      final semesterMap = asStringMap(rawSemester);
-      if (semesterMap == null) continue;
-      try {
-        semesters.add(Semester.fromJson(semesterMap));
-      } on Object catch (error, stackTrace) {
-        if (kDebugMode) {
-          debugPrint('跳过损坏的本地学期数据：${error.runtimeType}: $error\n$stackTrace');
-        }
-      }
-    }
-
-    grades = {};
-    final rawGrades = asStringMap(json['grades']) ?? const {};
-    for (final entry in rawGrades.entries) {
-      final parsedGrades = <Grade>[];
-      for (final rawGrade in asDynamicList(entry.value) ?? const []) {
-        final gradeMap = asStringMap(rawGrade);
-        if (gradeMap == null) continue;
-        try {
-          final grade = Grade.fromJson(gradeMap);
-          if (grade.id.isNotEmpty) parsedGrades.add(grade);
-        } on Object catch (error, stackTrace) {
-          if (kDebugMode) {
-            debugPrint('跳过损坏的本地成绩数据：${error.runtimeType}: $error\n$stackTrace');
-          }
-        }
-      }
-      if (parsedGrades.isNotEmpty) grades[entry.key] = parsedGrades;
-    }
-
-    List<double> numberList(Object? value, int expectedLength) {
-      final parsed = (asDynamicList(value) ?? const [])
-          .map(asDouble)
-          .whereType<double>()
-          .toList();
-      if (expectedLength == 4 && parsed.length == 3) {
-        parsed.insert(2, 0.0);
-      }
-      return parsed.length == expectedLength
-          ? parsed
-          : List<double>.filled(expectedLength, 0.0);
-    }
-
-    gpa = numberList(json['gpa'], 4);
-    aboardGpa = numberList(json['aboardGpa'], 4);
-    credit = asDouble(json['credit']) ?? 0.0;
-
-    specialDates = {};
-    for (final entry
-        in (asStringMap(json['specialDates']) ?? const {}).entries) {
-      final date = asDateTime(entry.key);
-      final description = asString(entry.value);
-      if (date != null && description != null) {
-        specialDates[date] = description;
-      }
-    }
-    lastUpdateTimeGrade =
-        asDateTime(json['lastUpdateTimeGrade']) ?? DateTime(2001);
-    lastUpdateTimeCourse =
-        asDateTime(json['lastUpdateTimeCourse']) ?? DateTime(2001);
-    lastUpdateTimeHomework =
-        asDateTime(json['lastUpdateTimeHomework']) ?? DateTime(2001);
-
-    todos = [];
-    for (final rawTodo in asDynamicList(json['todos']) ?? const []) {
-      final todoMap = asStringMap(rawTodo);
-      if (todoMap == null) continue;
-      try {
-        final todo = Todo.fromJson(todoMap);
-        if (todo.id.isNotEmpty) todos.add(todo);
-      } on Object catch (error, stackTrace) {
-        if (kDebugMode) {
-          debugPrint('跳过损坏的本地作业数据：${error.runtimeType}: $error\n$stackTrace');
-        }
-      }
-    }
-    pt2 = asDouble(json['pt2']) ?? 0.0;
-    pt3 = asDouble(json['pt3']) ?? 0.0;
-    pt4 = asDouble(json['pt4']) ?? 0.0;
-    isPracticeScoresGet = asBool(json['isPracticeScoresGet']) ?? false;
-    // 字段是否存在用于区分旧版缓存与“新版缓存但项目为空”。
-    final hasPracticeItemsField = json.containsKey('practiceScoreItems');
-    practiceScoreItems = [];
-    for (final rawItem
-        in asDynamicList(json['practiceScoreItems']) ?? const []) {
-      final itemMap = asStringMap(rawItem);
-      if (itemMap == null) continue;
-      try {
-        final item = PracticeScoreItem.fromJson(itemMap);
-        if (!item.deleted) practiceScoreItems.add(item);
-      } on Object catch (error, stackTrace) {
-        if (kDebugMode) {
-          debugPrint('跳过损坏的本地实践项目数据：${error.runtimeType}: $error\n$stackTrace');
-        }
-      }
-    }
-    practiceDataSource = PracticeDataSource.fromJson(
-      json['practiceDataSource'],
-    );
-    final hasPracticeSummarySource = json.containsKey('practiceSummarySource');
-    practiceSummarySource = PracticeSummarySource.fromJson(
-      json['practiceSummarySource'],
-    );
-    practiceUpdatedAt = asDateTime(json['practiceUpdatedAt'])?.toLocal();
-    practiceDetailsUpdatedAt =
-        asDateTime(json['practiceDetailsUpdatedAt'])?.toLocal() ??
-            practiceUpdatedAt;
-    practiceDetailsAvailable = asBool(json['practiceDetailsAvailable']) ??
-        (hasPracticeItemsField && practiceScoreItems.isNotEmpty);
-    practiceDetailsStale = asBool(json['practiceDetailsStale']) ?? false;
-    practiceSummaryStale =
-        asBool(json['practiceSummaryStale']) ?? hasPracticeSummarySource;
-    practiceMyPassed = asBool(json['practiceMyPassed']);
-    practiceLyPassed = asBool(json['practiceLyPassed']);
-    if (!json.containsKey('practiceDataSource') && isPracticeScoresGet) {
-      // 旧版本只保存教务网汇总，因此恢复为无明细且过期的兼容来源。
-      practiceDataSource = PracticeDataSource.zdbkCache;
-      practiceDetailsAvailable = false;
-      practiceDetailsStale = true;
-    }
-    if (!hasPracticeSummarySource &&
-        hasPracticeItemsField &&
-        practiceDetailsAvailable) {
-      // 旧版有明细时，其外层总分原本就是 getSqjl 项目合计。
-      final totals = PracticeScoreItem.approvedTotals(practiceScoreItems);
-      pt2 = totals[1] ?? 0;
-      pt3 = totals[2] ?? 0;
-      pt4 = totals[3] ?? 0;
-      practiceSummarySource = PracticeSummarySource.calculatedFromSqjl;
-      practiceSummaryStale = true;
-    } else if (!hasPracticeSummarySource && isPracticeScoresGet) {
-      practiceSummarySource = PracticeSummarySource.legacyPersisted;
-      practiceSummaryStale = true;
-    } else if (practiceSummarySource == PracticeSummarySource.networkMyInfo) {
-      // 从 Scholar 持久化恢复后已不是本次网络结果，按缓存语义展示。
-      practiceSummarySource = PracticeSummarySource.cachedMyInfo;
-      practiceSummaryStale = true;
-    }
-    isLogan = true;
+    _sync = ScholarSyncService(this);
+    applyScholarFromJson(this, json);
   }
 }

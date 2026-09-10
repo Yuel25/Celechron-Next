@@ -187,7 +187,7 @@ class _SessionCardState extends State<SessionCard>
               borderRadius: BorderRadius.circular(AppVisual.controlRadius - 1),
               child: LayoutBuilder(
                 builder: (context, constraints) => Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 4, 3, 3),
+                  padding: const EdgeInsets.fromLTRB(5, 4, 4, 3),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -197,7 +197,7 @@ class _SessionCardState extends State<SessionCard>
                         Icon(
                           CupertinoIcons.exclamationmark_triangle_fill,
                           color: accent,
-                          size: 11,
+                          size: 12,
                         ),
                       Flexible(
                         child: Text(
@@ -208,8 +208,8 @@ class _SessionCardState extends State<SessionCard>
                               .textTheme
                               .textStyle
                               .copyWith(
-                                fontSize: 10,
-                                height: 1.12,
+                                fontSize: 11,
+                                height: 1.15,
                                 fontWeight: FontWeight.w700,
                                 color: CupertinoDynamicColor.resolve(
                                   CupertinoColors.label,
@@ -220,31 +220,31 @@ class _SessionCardState extends State<SessionCard>
                       ),
                       if (!widget.hideInfomation &&
                           sessionLocation.isNotEmpty &&
-                          constraints.maxHeight > 42) ...[
+                          constraints.maxHeight > 38) ...[
                         const SizedBox(height: 2),
                         Text(
                           sessionLocation,
                           maxLines: constraints.maxHeight > 85 ? 2 : 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 9,
-                            height: 1.1,
-                            color: CupertinoColors.secondaryLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            height: 1.12,
+                            color: AppVisual.secondaryLabel(context),
                           ),
                         ),
                       ],
                       if (!widget.hideInfomation &&
                           !hasConflict &&
                           sessionTeacher.isNotEmpty &&
-                          constraints.maxHeight > 92) ...[
+                          constraints.maxHeight > 88) ...[
                         const SizedBox(height: 2),
                         Text(
                           sessionTeacher,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 8.5,
-                            color: CupertinoColors.tertiaryLabel,
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            color: AppVisual.tertiaryLabel(context),
                           ),
                         ),
                       ],

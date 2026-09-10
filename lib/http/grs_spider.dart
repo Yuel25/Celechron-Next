@@ -9,7 +9,6 @@ import 'package:celechron/http/time_config_service.dart';
 import 'package:celechron/http/zjuServices/courses.dart';
 import 'package:celechron/http/zjuServices/grs_new.dart';
 import 'package:celechron/http/zjuServices/exceptions.dart';
-import 'package:celechron/utils/tuple.dart';
 import 'package:celechron/model/todo.dart';
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
@@ -274,8 +273,8 @@ class GrsSpider implements Spider {
 
   // 返回一堆错误信息，如果有的话。看看返回的List是不是空的就知道刷新是否成功。
   @override
-  Future<EverythingTuple> getEverything(
-      {void Function(EverythingTuple partial)? onProgress}) async {
+  Future<EverythingResult> getEverything(
+      {void Function(EverythingResult partial)? onProgress}) async {
     // 返回值初始化
     var outSemesters = <Semester>[];
     var outGrades = <Grade>[];
@@ -295,8 +294,14 @@ class GrsSpider implements Spider {
         _username.length >= 3 ? _username.substring(1, 3) : '';
     final parsedEnrollmentYear = int.tryParse(enrollmentDigits);
     if (parsedEnrollmentYear == null) {
-      return Tuple6(loginErrorMessages, <String?>['无法解析学号中的入学年份：$_username'],
-          outSemesters, outGrades, outSpecialDates, outTodos);
+      return EverythingResult(
+        loginErrors: loginErrorMessages,
+        fetchErrors: <String?>['无法解析学号中的入学年份：$_username'],
+        semesters: outSemesters,
+        grades: outGrades,
+        specialDates: outSpecialDates,
+        todos: outTodos,
+      );
     }
     var yearEnroll = parsedEnrollmentYear + 2000;
     // 假设研究生在本科时提前两年选了研究生的课
@@ -705,7 +710,13 @@ class GrsSpider implements Spider {
       }
     }
 
-    return Tuple6(loginErrorMessages, fetchErrorMessages, outSemesters,
-        outGrades, outSpecialDates, outTodos);
+    return EverythingResult(
+      loginErrors: loginErrorMessages,
+      fetchErrors: fetchErrorMessages,
+      semesters: outSemesters,
+      grades: outGrades,
+      specialDates: outSpecialDates,
+      todos: outTodos,
+    );
   }
 }

@@ -40,20 +40,27 @@ void main() {
     expect(find.byType(CupertinoAlertDialog), findsNothing);
     expect(find.byType(CupertinoDatePicker), findsOneWidget);
     await tester.tap(find.text('生成规划'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('规划已生成'), findsOneWidget);
-    expect(find.text('查看安排'), findsOneWidget);
     expect(find.byType(CupertinoDatePicker), findsNothing);
     expect(calls, 2);
+    // 成功后约 900ms 自动关闭
+    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
+    expect(find.byType(PlanningSheet), findsNothing);
   });
 
   testWidgets('compressed break result is visible without another dialog',
       (tester) async {
     await mount(tester, (_) => 5);
     await tester.tap(find.text('生成规划'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.textContaining('本次休息缩短为 5 分钟'), findsOneWidget);
     expect(find.byType(CupertinoAlertDialog), findsNothing);
+    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('time that elapsed while panel was open does not generate',
@@ -85,8 +92,11 @@ void main() {
     expect(button.onPressed, isNull);
     expect(calls, 1);
     result.complete(15);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('规划已生成'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
   });
 
   for (final brightness in Brightness.values) {

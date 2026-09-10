@@ -173,8 +173,7 @@ class _CourseIdMappingEditFormState extends State<CourseIdMappingEditForm> {
                         },
                         color: CupertinoColors.activeBlue,
                         child: const Text('保存',
-                            style:
-                                TextStyle(color: CupertinoColors.white))),
+                            style: TextStyle(color: CupertinoColors.white))),
                   ],
                 ),
               ),

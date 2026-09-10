@@ -235,7 +235,7 @@ class WeightedGpaPage extends StatelessWidget {
                                     BorderRadius.circular(AppVisual.cardRadius),
                                 color: CupertinoDynamicColor.resolve(
                                     CupertinoColors.systemBackground, context),
-                                boxShadow: AppVisual.surfaceShadow,
+                                boxShadow: AppVisual.shadowFor(context),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -7,6 +7,7 @@ import 'package:celechron/design/round_rectangle_card.dart';
 import 'package:celechron/design/custom_colors.dart';
 import 'package:celechron/design/app_empty_state.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:celechron/model/task.dart';
 import 'task_edit_page.dart';
 import 'dart:async';
@@ -185,6 +186,7 @@ class TaskPage extends StatelessWidget {
       _flowController.flowList
           .removeWhere((period) => period.fromUid == deadline.uid);
     }
+    HapticFeedback.lightImpact();
     _taskController.updateDeadlineList();
     _taskController.updateDeadlineListTime();
     _taskController.taskList.refresh();

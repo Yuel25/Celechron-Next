@@ -77,13 +77,12 @@ class _GradeCardState extends State<GradeCard>
 
   void _handleTap() {
     if (_gradeDetailController.customGpaMode.value) {
-      var cur = _gradeDetailController.customGpaSelected[widget.grade.id] ??
-          false;
+      var cur =
+          _gradeDetailController.customGpaSelected[widget.grade.id] ?? false;
       _gradeDetailController.customGpaSelected[widget.grade.id] = !cur;
     } else {
       navigator!.push(CupertinoPageRoute(
-          builder: (context) =>
-              CourseDetailPage(courseId: widget.grade.id)));
+          builder: (context) => CourseDetailPage(courseId: widget.grade.id)));
     }
   }
 
@@ -115,7 +114,7 @@ class _GradeCardState extends State<GradeCard>
                   ? CupertinoColors.systemFill
                   : CupertinoDynamicColor.resolve(
                       widget.backgroundColor, context),
-              boxShadow: AppVisual.surfaceShadow,
+              boxShadow: AppVisual.shadowFor(context),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

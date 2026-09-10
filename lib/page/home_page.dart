@@ -50,8 +50,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final tabBar = CupertinoTabBar(
       iconSize: 25,
-      activeColor: AppVisual.brand,
-      inactiveColor: CupertinoColors.secondaryLabel,
+      activeColor: CupertinoDynamicColor.resolve(AppVisual.brand, context),
+      inactiveColor: AppVisual.secondaryLabel(context),
       backgroundColor: CupertinoDynamicColor.resolve(
               CupertinoColors.secondarySystemBackground, context)
           .withValues(alpha: 0.5),

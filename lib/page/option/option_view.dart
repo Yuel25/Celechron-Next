@@ -18,17 +18,6 @@ import 'custom_license_page.dart';
 import 'login_page.dart';
 import 'option_controller.dart';
 
-const Color _kHeaderFooterColor = CupertinoDynamicColor(
-  color: Color.fromRGBO(108, 108, 108, 1.0),
-  darkColor: Color.fromRGBO(142, 142, 146, 1.0),
-  highContrastColor: Color.fromRGBO(74, 74, 77, 1.0),
-  darkHighContrastColor: Color.fromRGBO(176, 176, 183, 1.0),
-  elevatedColor: Color.fromRGBO(108, 108, 108, 1.0),
-  darkElevatedColor: Color.fromRGBO(142, 142, 146, 1.0),
-  highContrastElevatedColor: Color.fromRGBO(108, 108, 108, 1.0),
-  darkHighContrastElevatedColor: Color.fromRGBO(142, 142, 146, 1.0),
-);
-
 class OptionPage extends StatelessWidget {
   final _optionController =
       Get.put(OptionController(), tag: 'optionController');
@@ -37,18 +26,14 @@ class OptionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var trailingTextStyle = TextStyle(
-        color: CupertinoDynamicColor.resolve(
-            CupertinoColors.secondaryLabel, context),
-        fontSize: 16);
+    var trailingTextStyle =
+        TextStyle(color: AppVisual.secondaryLabel(context), fontSize: 16);
 
     var headerFooterTextStyle = CupertinoTheme.of(context)
         .textTheme
         .textStyle
         .merge(TextStyle(
-            fontSize: 13.0,
-            color:
-                CupertinoDynamicColor.resolve(_kHeaderFooterColor, context)));
+            fontSize: 13.0, color: AppVisual.secondaryLabel(context)));
 
     return CupertinoPageScaffold(
         backgroundColor: CupertinoColors.systemGroupedBackground,

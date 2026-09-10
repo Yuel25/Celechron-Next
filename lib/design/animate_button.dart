@@ -76,8 +76,7 @@ class _AnimateButtonState extends State<AnimateButton>
       padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: CupertinoDynamicColor.resolve(
-            widget.backgroundColor, context),
+        color: CupertinoDynamicColor.resolve(widget.backgroundColor, context),
         boxShadow: const [
           BoxShadow(
             color: Color.fromRGBO(0, 0, 0, 0.05),
@@ -95,10 +94,7 @@ class _AnimateButtonState extends State<AnimateButton>
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: CupertinoTheme.of(context)
-                      .textTheme
-                      .textStyle
-                      .color,
+                  color: CupertinoTheme.of(context).textTheme.textStyle.color,
                 ),
           ),
         ],

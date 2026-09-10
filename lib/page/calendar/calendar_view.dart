@@ -86,15 +86,13 @@ class CalendarPage extends StatelessWidget {
                   }
                   final calendarTextStyle =
                       CupertinoTheme.of(context).textTheme.textStyle;
-                  final secondaryCalendarTextStyle =
-                      calendarTextStyle.copyWith(
+                  final secondaryCalendarTextStyle = calendarTextStyle.copyWith(
                     color: CupertinoDynamicColor.resolve(
                       CupertinoColors.secondaryLabel,
                       context,
                     ),
                   );
-                  final tertiaryCalendarTextStyle =
-                      calendarTextStyle.copyWith(
+                  final tertiaryCalendarTextStyle = calendarTextStyle.copyWith(
                     color: CupertinoDynamicColor.resolve(
                       CupertinoColors.tertiaryLabel,
                       context,
@@ -179,21 +177,29 @@ class CalendarPage extends StatelessWidget {
                             calendarStyle: CalendarStyle(
                               markersAnchor: -0.1,
                               markersMaxCount: 10,
+                              // 选中：实心品牌色；今天：品牌色描边环，避免与选中混淆
                               selectedDecoration: BoxDecoration(
                                 color: CupertinoDynamicColor.resolve(
-                                    AppVisual.brand.withValues(alpha: 0.5),
-                                    context),
+                                    AppVisual.brand, context),
                                 shape: BoxShape.circle,
                               ),
-                              selectedTextStyle: calendarTextStyle,
+                              selectedTextStyle: calendarTextStyle.copyWith(
+                                color: AppVisual.onBrand(context),
+                                fontWeight: FontWeight.w600,
+                              ),
                               todayDecoration: BoxDecoration(
-                                color: CupertinoDynamicColor.resolve(
-                                    CupertinoColors.inactiveGray
-                                        .withValues(alpha: 0.5),
-                                    context),
                                 shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: CupertinoDynamicColor.resolve(
+                                      AppVisual.brand, context),
+                                  width: 1.5,
+                                ),
                               ),
-                              todayTextStyle: calendarTextStyle,
+                              todayTextStyle: calendarTextStyle.copyWith(
+                                color: CupertinoDynamicColor.resolve(
+                                    AppVisual.brand, context),
+                                fontWeight: FontWeight.w600,
+                              ),
                               defaultTextStyle: calendarTextStyle,
                               weekendTextStyle: calendarTextStyle,
                               outsideTextStyle: tertiaryCalendarTextStyle,

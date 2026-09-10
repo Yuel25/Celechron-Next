@@ -67,12 +67,10 @@ class CelechronHeader extends SliverPersistentHeaderDelegate {
       children: [
         Text(
           subtitle,
-          style: CupertinoTheme.of(context)
-              .textTheme
-              .navTitleTextStyle
-              .copyWith(
-                fontSize: fontSize - (bottom == null ? 0 : 2),
-              ),
+          style:
+              CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(
+                    fontSize: fontSize - (bottom == null ? 0 : 2),
+                  ),
         ),
         if (bottom != null) bottom!,
       ],

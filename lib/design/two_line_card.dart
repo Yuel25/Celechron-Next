@@ -138,17 +138,21 @@ class _TwoLineCardState extends State<TwoLineCard>
               children: [
                 Text(
                   widget.content,
-                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFeatures: [const FontFeature.tabularFigures()],
-                        color: const Color.fromRGBO(0, 0, 0, 0),
-                      ),
+                  style:
+                      CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFeatures: [const FontFeature.tabularFigures()],
+                            color: const Color.fromRGBO(0, 0, 0, 0),
+                          ),
                 ),
                 if (widget.extraContent != null)
                   Text(
                     ' / ${widget.extraContent}',
-                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                    style: CupertinoTheme.of(context)
+                        .textTheme
+                        .textStyle
+                        .copyWith(
                           fontSize: 12,
                           fontFeatures: [const FontFeature.tabularFigures()],
                           color: const Color.fromRGBO(0, 0, 0, 0),
@@ -174,7 +178,7 @@ class _TwoLineCardState extends State<TwoLineCard>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppVisual.cardRadius),
         color: CupertinoDynamicColor.resolve(widget.backgroundColor, context),
-        boxShadow: AppVisual.surfaceShadow,
+        boxShadow: AppVisual.shadowFor(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,19 +224,21 @@ class _TwoLineCardState extends State<TwoLineCard>
               children: [
                 Text(
                   widget.content,
-                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: contentColor,
-                      ),
+                  style:
+                      CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: contentColor,
+                          ),
                 ),
                 if (widget.extraContent != null)
                   Text(
                     ' / ${widget.extraContent}',
-                    style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                          fontSize: 12,
-                          color: contentColor,
-                        ),
+                    style:
+                        CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                              fontSize: 12,
+                              color: contentColor,
+                            ),
                   ),
               ],
             ),

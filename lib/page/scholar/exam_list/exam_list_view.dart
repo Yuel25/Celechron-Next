@@ -354,8 +354,7 @@ class _ExamListPageState extends State<ExamListPage> {
                   padding: index == 0
                       ? const EdgeInsets.only(
                           top: 0, bottom: 5, left: 16, right: 16)
-                      : const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 5),
+                      : const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                   child: _examCard(context, _examListController.exams[index]),
                 ),
                 childCount: _examListController.exams.length,

@@ -86,8 +86,7 @@ class GradeDetailPage extends StatelessWidget {
                                         .semesterIndex.value)
                                     .item2
                                     .toStringAsFixed(1),
-                                backgroundColor:
-                                    AppVisual.fgSand)),
+                                backgroundColor: AppVisual.fgSand)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -97,8 +96,7 @@ class GradeDetailPage extends StatelessWidget {
                                         .semesterIndex.value)
                                     .item1[0]
                                     .toStringAsFixed(2),
-                                backgroundColor:
-                                    AppVisual.fgSakura)),
+                                backgroundColor: AppVisual.fgSakura)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -113,8 +111,7 @@ class GradeDetailPage extends StatelessWidget {
                                             .semesterIndex.value)
                                     .item1[2]
                                     .toStringAsFixed(2),
-                                backgroundColor:
-                                    AppVisual.fgMagenta)),
+                                backgroundColor: AppVisual.fgMagenta)),
                           ),
                         ],
                       ),
@@ -160,16 +157,14 @@ class GradeDetailPage extends StatelessWidget {
                             child: Obx(() => TwoLineCard(
                                 title: '已选学分',
                                 content: inGpa.item2.toStringAsFixed(1),
-                                backgroundColor:
-                                    AppVisual.fgSand)),
+                                backgroundColor: AppVisual.fgSand)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Obx(() => TwoLineCard(
                                 title: '已选五分制',
                                 content: inGpa.item1[0].toStringAsFixed(2),
-                                backgroundColor:
-                                    AppVisual.fgSakura)),
+                                backgroundColor: AppVisual.fgSakura)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -177,8 +172,7 @@ class GradeDetailPage extends StatelessWidget {
                                 title: '已选四分制',
                                 content: inGpa.item1[1].toStringAsFixed(2),
                                 extraContent: inGpa.item1[2].toStringAsFixed(2),
-                                backgroundColor:
-                                    AppVisual.fgMagenta)),
+                                backgroundColor: AppVisual.fgMagenta)),
                           ),
                         ],
                       ),
@@ -189,16 +183,14 @@ class GradeDetailPage extends StatelessWidget {
                             child: Obx(() => TwoLineCard(
                                 title: '已选百分制',
                                 content: inGpa.item1[3].toStringAsFixed(2),
-                                backgroundColor:
-                                    AppVisual.fgPeach)),
+                                backgroundColor: AppVisual.fgPeach)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Obx(() => TwoLineCard(
                                 title: '未选五分制',
                                 content: notGpa.item1[0].toStringAsFixed(2),
-                                backgroundColor:
-                                    AppVisual.fgCyan)),
+                                backgroundColor: AppVisual.fgCyan)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -207,8 +199,7 @@ class GradeDetailPage extends StatelessWidget {
                                 content: notGpa.item1[1].toStringAsFixed(2),
                                 extraContent:
                                     notGpa.item1[2].toStringAsFixed(2),
-                                backgroundColor:
-                                    AppVisual.fgSpring)),
+                                backgroundColor: AppVisual.fgSpring)),
                           ),
                         ],
                       ),

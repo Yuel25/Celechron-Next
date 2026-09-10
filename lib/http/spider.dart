@@ -1,13 +1,27 @@
 import 'package:celechron/database/database_helper.dart';
-import 'package:celechron/utils/tuple.dart';
 
 import 'package:celechron/model/grade.dart';
 import 'package:celechron/model/semester.dart';
 import 'package:celechron/model/todo.dart';
 
 /// getEverything 的返回值：登录错误、抓取错误、学期、成绩、特殊日期、作业
-typedef EverythingTuple = Tuple6<List<String?>, List<String?>, List<Semester>,
-    List<Grade>, Map<DateTime, String>, List<Todo>>;
+class EverythingResult {
+  final List<String?> loginErrors;
+  final List<String?> fetchErrors;
+  final List<Semester> semesters;
+  final List<Grade> grades;
+  final Map<DateTime, String> specialDates;
+  final List<Todo> todos;
+
+  const EverythingResult({
+    required this.loginErrors,
+    required this.fetchErrors,
+    required this.semesters,
+    required this.grades,
+    required this.specialDates,
+    required this.todos,
+  });
+}
 
 /// 单个抓取模块的状态（供刷新状态文案使用）
 enum FetchModuleState { pending, success, failed }
@@ -54,8 +68,8 @@ abstract class Spider {
 
   /// onProgress：异步刷新用。每完成一个顶层抓取任务，就带着当前已累积的数据回调一次；
   /// 传 null 则行为与原来完全一致。
-  Future<EverythingTuple> getEverything(
-      {void Function(EverythingTuple partial)? onProgress}) async {
+  Future<EverythingResult> getEverything(
+      {void Function(EverythingResult partial)? onProgress}) async {
     throw UnimplementedError();
   }
 }
@@ -76,7 +90,7 @@ void attachEverythingProgress({
   required List<Grade> grades,
   required Map<DateTime, String> specialDates,
   required List<Todo> todos,
-  required void Function(EverythingTuple partial) onProgress,
+  required void Function(EverythingResult partial) onProgress,
 }) {
   var errors = List<String?>.filled(fetches.length, null);
   var done = List<bool>.filled(fetches.length, false);
@@ -102,21 +116,22 @@ void attachEverythingProgress({
           partialErrors[timetableIndex] = '课表查询进行中';
         }
       }
-      onProgress(Tuple6(
-          loginErrorMessages,
-          partialErrors,
-          semestersReady
-              ? semesters
-                  .where((e) =>
-                      e.grades.isNotEmpty ||
-                      e.sessions.isNotEmpty ||
-                      e.exams.isNotEmpty ||
-                      e.courses.isNotEmpty)
-                  .toList()
-              : <Semester>[],
-          grades,
-          calendarReady ? specialDates : <DateTime, String>{},
-          todos));
+      onProgress(EverythingResult(
+        loginErrors: loginErrorMessages,
+        fetchErrors: partialErrors,
+        semesters: semestersReady
+            ? semesters
+                .where((e) =>
+                    e.grades.isNotEmpty ||
+                    e.sessions.isNotEmpty ||
+                    e.exams.isNotEmpty ||
+                    e.courses.isNotEmpty)
+                .toList()
+            : <Semester>[],
+        grades: grades,
+        specialDates: calendarReady ? specialDates : <DateTime, String>{},
+        todos: todos,
+      ));
     });
   }
 }

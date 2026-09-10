@@ -1,3 +1,4 @@
+import 'package:celechron/design/app_visual.dart';
 import 'package:celechron/design/multiple_columns.dart';
 import 'package:celechron/model/practice_score_item.dart';
 import 'package:celechron/model/scholar.dart';
@@ -56,8 +57,8 @@ class PracticeScoreColumns extends StatelessWidget {
           Text(
             passed.join(' · '),
             key: const ValueKey('practice-passed-status'),
-            style: const TextStyle(
-              color: CupertinoColors.secondaryLabel,
+            style: TextStyle(
+              color: AppVisual.secondaryLabel(context),
               fontSize: 13,
             ),
           ),
@@ -258,9 +259,9 @@ class _SummaryCard extends StatelessWidget {
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '正式汇总记点',
-            style: TextStyle(color: CupertinoColors.secondaryLabel),
+            style: TextStyle(color: AppVisual.secondaryLabel(context)),
           ),
           const SizedBox(height: 4),
           Text(
@@ -272,17 +273,17 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             '记点来源：${source.label}',
-            style: const TextStyle(color: CupertinoColors.secondaryLabel),
+            style: TextStyle(color: AppVisual.secondaryLabel(context)),
           ),
           const SizedBox(height: 4),
           Text(
             '项目明细来源：${detailSource.label}',
-            style: const TextStyle(color: CupertinoColors.secondaryLabel),
+            style: TextStyle(color: AppVisual.secondaryLabel(context)),
           ),
           const SizedBox(height: 4),
           Text(
             '更新时间：${_dateTime(updatedAt)}',
-            style: const TextStyle(color: CupertinoColors.secondaryLabel),
+            style: TextStyle(color: AppVisual.secondaryLabel(context)),
           ),
           if (stale) ...[
             const SizedBox(height: 10),
@@ -299,10 +300,10 @@ class _SummaryCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 10),
-          const Text(
+          Text(
             '正式汇总与项目记录可能不完全一致，项目明细仍按 getSqjl 原样展示。',
             style: TextStyle(
-              color: CupertinoColors.secondaryLabel,
+              color: AppVisual.secondaryLabel(context),
               fontSize: 13,
               height: 1.4,
             ),
@@ -326,8 +327,8 @@ class _NoDetailsCard extends StatelessWidget {
       child: Text(
         zdbkOnly ? '当前仅获取到旧实践汇总，暂无 getSqjl 项目明细。' : '当前 getSqjl 项目明细不可用，请稍后刷新。',
         key: const ValueKey('practice-no-details'),
-        style: const TextStyle(
-          color: CupertinoColors.secondaryLabel,
+        style: TextStyle(
+          color: AppVisual.secondaryLabel(context),
           height: 1.5,
         ),
       ),
@@ -380,16 +381,16 @@ class _PracticeItemCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       '${item.projectType} · ${item.qualityType}',
-                      style: const TextStyle(
-                        color: CupertinoColors.secondaryLabel,
+                      style: TextStyle(
+                        color: AppVisual.secondaryLabel(context),
                         fontSize: 13,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '更新于 ${_dateTime(item.updatedAt)}',
-                      style: const TextStyle(
-                        color: CupertinoColors.tertiaryLabel,
+                      style: TextStyle(
+                        color: AppVisual.tertiaryLabel(context),
                         fontSize: 12,
                       ),
                     ),
@@ -402,16 +403,16 @@ class _PracticeItemCard extends StatelessWidget {
                 style: TextStyle(
                   color: counted
                       ? CupertinoColors.systemGreen
-                      : CupertinoColors.label,
+                      : AppVisual.label(context),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
                 size: 14,
-                color: CupertinoColors.tertiaryLabel,
+                color: AppVisual.tertiaryLabel(context),
               ),
             ],
           ),
@@ -432,8 +433,8 @@ class _SectionTitle extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
         child: Text(
           '$title（$count）',
-          style: const TextStyle(
-            color: CupertinoColors.secondaryLabel,
+          style: TextStyle(
+            color: AppVisual.secondaryLabel(context),
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -451,7 +452,7 @@ class _EmptyGroup extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(4, 8, 4, 18),
         child: Text(
           text,
-          style: const TextStyle(color: CupertinoColors.secondaryLabel),
+          style: TextStyle(color: AppVisual.secondaryLabel(context)),
         ),
       );
 }
@@ -501,7 +502,7 @@ class _DetailRow extends StatelessWidget {
               width: 112,
               child: Text(
                 label,
-                style: const TextStyle(color: CupertinoColors.secondaryLabel),
+                style: TextStyle(color: AppVisual.secondaryLabel(context)),
               ),
             ),
             Expanded(

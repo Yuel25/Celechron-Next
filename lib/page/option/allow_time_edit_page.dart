@@ -276,90 +276,90 @@ class _AllowTimeEditPageState extends State<AllowTimeEditPage> {
       child: CustomScrollView(
         slivers: [
           const CelechronSliverTextHeader(subtitle: '编辑可用工作时段'),
-            SliverList(
-              delegate: SliverChildListDelegate([
-                CupertinoListSection.insetGrouped(
-                  header: Container(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Text(
-                      '可用工作时段列表',
-                      style: TextStyle(
-                          color: CupertinoDynamicColor.resolve(
-                              CupertinoColors.secondaryLabel, context),
-                          fontSize: 14),
-                    ),
+          SliverList(
+            delegate: SliverChildListDelegate([
+              CupertinoListSection.insetGrouped(
+                header: Container(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(
+                    '可用工作时段列表',
+                    style: TextStyle(
+                        color: CupertinoDynamicColor.resolve(
+                            CupertinoColors.secondaryLabel, context),
+                        fontSize: 14),
                   ),
-                  children: [
-                    ...List.generate(
-                      now.length,
-                      (index) => CupertinoFormRow(
-                        prefix: Text(
-                            '${timeToString(now[index].first)} - ${timeToString(now[index].second)}'),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                showCupertinoDialog(
-                                  context: context,
-                                  builder: (context) => DateTimePairEditDialog(
-                                    val: now[index],
-                                    onChanged: (DateTimePair updated) {
-                                      setState(() {
-                                        now[index] = DateTimePair(
-                                          first: updated.first,
-                                          second: updated.second,
-                                          isDeleted: updated.isDeleted,
-                                        );
-                                        saveAllowTime();
-                                      });
-                                    },
-                                  ),
-                                );
-                              },
-                              child: const Icon(
-                                CupertinoIcons.pencil,
-                                color: CupertinoColors.activeBlue,
-                              ),
+                ),
+                children: [
+                  ...List.generate(
+                    now.length,
+                    (index) => CupertinoFormRow(
+                      prefix: Text(
+                          '${timeToString(now[index].first)} - ${timeToString(now[index].second)}'),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            onPressed: () {
+                              showCupertinoDialog(
+                                context: context,
+                                builder: (context) => DateTimePairEditDialog(
+                                  val: now[index],
+                                  onChanged: (DateTimePair updated) {
+                                    setState(() {
+                                      now[index] = DateTimePair(
+                                        first: updated.first,
+                                        second: updated.second,
+                                        isDeleted: updated.isDeleted,
+                                      );
+                                      saveAllowTime();
+                                    });
+                                  },
+                                ),
+                              );
+                            },
+                            child: const Icon(
+                              CupertinoIcons.pencil,
+                              color: CupertinoColors.activeBlue,
                             ),
-                            CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                if (now.length > 1) {
-                                  setState(() {
-                                    now.removeAt(index);
-                                    saveAllowTime();
-                                  });
-                                }
-                              },
-                              child: const Icon(
-                                CupertinoIcons.delete,
-                                color: CupertinoColors.destructiveRed,
-                              ),
+                          ),
+                          CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            onPressed: () {
+                              if (now.length > 1) {
+                                setState(() {
+                                  now.removeAt(index);
+                                  saveAllowTime();
+                                });
+                              }
+                            },
+                            child: const Icon(
+                              CupertinoIcons.delete,
+                              color: CupertinoColors.destructiveRed,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                CupertinoButton(
-                  onPressed: () {
-                    now.add(DateTimePair(
-                      first: DateTime(0, 0, 0, 8, 0),
-                      second: DateTime(0, 0, 0, 12, 0),
-                      isDeleted: false,
-                    ));
-                    setState(() {});
-                  },
-                  child: const Text('添加一个时段'),
-                ),
-              ]),
-            ),
-          ],
-        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              CupertinoButton(
+                onPressed: () {
+                  now.add(DateTimePair(
+                    first: DateTime(0, 0, 0, 8, 0),
+                    second: DateTime(0, 0, 0, 12, 0),
+                    isDeleted: false,
+                  ));
+                  setState(() {});
+                },
+                child: const Text('添加一个时段'),
+              ),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 }

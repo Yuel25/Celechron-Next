@@ -36,12 +36,12 @@ class CourseSchedulePage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '选择学年',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: CupertinoColors.secondaryLabel,
+              color: AppVisual.secondaryLabel(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -91,8 +91,8 @@ class CourseSchedulePage extends StatelessWidget {
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: selected
-                                ? CupertinoColors.white
-                                : CupertinoColors.label,
+                                ? AppVisual.onBrand(context)
+                                : AppVisual.label(context),
                           ),
                         ),
                       ),
@@ -107,12 +107,12 @@ class CourseSchedulePage extends StatelessWidget {
             () => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '学期阶段',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: CupertinoColors.secondaryLabel,
+                    color: AppVisual.secondaryLabel(context),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -148,9 +148,9 @@ class CourseSchedulePage extends StatelessWidget {
                   _courseScheduleController.firstOrSecondSemester.value
                       ? '每两周 ${_courseScheduleController.semester.firstHalfSessionCount} 节课'
                       : '每两周 ${_courseScheduleController.semester.secondHalfSessionCount} 节课',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: CupertinoColors.secondaryLabel,
+                    color: AppVisual.secondaryLabel(context),
                   ),
                 ),
               ],

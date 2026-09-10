@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:celechron/design/custom_colors.dart';
 import 'package:celechron/design/app_empty_state.dart';
+import 'package:celechron/design/app_visual.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:celechron/database/database_helper.dart';
@@ -143,32 +144,33 @@ class FlowPage extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          const Row(
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
+                              const Icon(
                                 CupertinoIcons.exclamationmark_triangle_fill,
                                 color: CupertinoColors.systemOrange,
                                 size: 20,
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    const Text(
                                       '计划需要更新',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    SizedBox(height: 3),
+                                    const SizedBox(height: 3),
                                     Text(
                                       '任务发生了变化，当前安排可能已不再合适。',
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: CupertinoColors.secondaryLabel,
+                                        color:
+                                            AppVisual.secondaryLabel(context),
                                       ),
                                     ),
                                   ],

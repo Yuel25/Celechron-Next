@@ -1,11 +1,47 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show LinearProgressIndicator;
 
 import '../model/period.dart';
 import '../model/task.dart';
 import '../utils/utils.dart';
 import '../design/app_visual.dart';
 import '../design/round_rectangle_card.dart';
+
+/// 纯 Cupertino 细进度条，避免依赖 Material 的 LinearProgressIndicator。
+class _ThinProgressBar extends StatelessWidget {
+  const _ThinProgressBar({
+    required this.value,
+    required this.color,
+    this.height = 4,
+  });
+
+  final double value;
+  final Color color;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = value.isFinite ? value.clamp(0.0, 1.0) : 0.0;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height / 2),
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: color.withValues(alpha: 0.12)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: t,
+                child: ColoredBox(color: color),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 String agendaTime(DateTime value, DateTime now) {
   final date = DateTime(value.year, value.month, value.day);
@@ -111,15 +147,11 @@ class AgendaPeriodCard extends StatelessWidget {
                   fontSize: 20, fontWeight: FontWeight.w600, color: color)),
           if (active) ...[
             const SizedBox(height: 12),
-            ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 5,
-                  color: color,
-                  backgroundColor: color.withValues(alpha: 0.12),
-                  semanticsLabel: '当前事项进度',
-                )),
+            Semantics(
+              label: '当前事项进度',
+              value: '${(progress * 100).round()}%',
+              child: _ThinProgressBar(value: progress, color: color, height: 5),
+            ),
           ],
         ],
       ]),
@@ -217,15 +249,15 @@ class TaskCardContent extends StatelessWidget {
             style: TextStyle(fontSize: 13, color: secondary)),
         if (!completed) ...[
           const SizedBox(height: 8),
-          ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                value: task.getProgress().isFinite ? task.getProgress() : 0,
-                minHeight: 4,
-                color: color,
-                backgroundColor: color.withValues(alpha: 0.1),
-                semanticsLabel: '任务完成进度',
-              )),
+          Semantics(
+            label: '任务完成进度',
+            value: '${(task.getProgress().clamp(0.0, 1.0) * 100).round()}%',
+            child: _ThinProgressBar(
+              value: task.getProgress(),
+              color: color,
+              height: 4,
+            ),
+          ),
         ],
       ],
     ]);
