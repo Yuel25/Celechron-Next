@@ -3,7 +3,6 @@ import 'package:celechron/model/period.dart';
 import 'package:celechron/model/scholar.dart';
 import 'package:celechron/model/task.dart';
 import 'package:celechron/page/flow/flow_controller.dart';
-import 'package:celechron/page/task/task_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
@@ -15,13 +14,6 @@ class MemoryDatabase extends DatabaseHelper {
   int saves = 0;
 
   @override
-  Duration getWorkTime() => const Duration(minutes: 45);
-  @override
-  Duration getRestTime() => const Duration(minutes: 15);
-  @override
-  Map<DateTime, DateTime> getAllowTime() =>
-      {DateTime(0, 1, 1, 8): DateTime(0, 1, 1, 9)};
-  @override
   Future<void> saveTaskFlowSnapshot(
       {required List<Task> tasks,
       required List<Period> flows,
@@ -31,6 +23,12 @@ class MemoryDatabase extends DatabaseHelper {
     this.tasks = tasks.map((task) => task.copyWith()).toList();
     this.flows = flows.map((flow) => flow.copyWith()).toList();
   }
+}
+
+class FakeScholar extends Scholar {
+  List<Period> mockPeriods = [];
+  @override
+  List<Period> get periods => mockPeriods;
 }
 
 class CountingFlowController extends FlowController {
@@ -48,6 +46,7 @@ void main() {
   late MemoryDatabase db;
   late RxList<Task> tasks;
   late RxList<Period> flows;
+  late Rx<FakeScholar> scholar;
 
   setUp(() {
     now = DateTime(2030, 1, 1, 8);
@@ -59,10 +58,16 @@ void main() {
           fromUid: 'task',
           type: PeriodType.flow,
           startTime: now.subtract(const Duration(minutes: 5)),
-          endTime: now.add(const Duration(minutes: 40)))
+          endTime: now.add(const Duration(minutes: 40))),
+      Period(
+          uid: 'old-virtual',
+          type: PeriodType.virtual,
+          startTime: now.subtract(const Duration(minutes: 10)),
+          endTime: now.subtract(const Duration(minutes: 5))),
     ].obs;
+    scholar = FakeScholar().obs;
     Get.put<DatabaseHelper>(db, tag: 'db');
-    Get.put(Scholar().obs, tag: 'scholar');
+    Get.put<Rx<Scholar>>(scholar, tag: 'scholar');
     Get.put(tasks, tag: 'taskList');
     Get.put(flows, tag: 'flowList');
     Get.put(now.obs, tag: 'taskListLastUpdate');
@@ -70,24 +75,47 @@ void main() {
   });
   tearDown(() async => Get.reset());
 
-  test('insufficient time preserves old plan and does not save', () {
+  test('flowList clears historical flow and virtual periods on walkFlowList',
+      () {
+    expect(flows.any((flow) => flow.type == PeriodType.flow), isTrue);
+    expect(flows.any((flow) => flow.type == PeriodType.virtual), isTrue);
+
     final controller = FlowController(now: () => now);
-    final original = flows.single;
-    tasks.single.endTime = now.add(const Duration(hours: 1));
-    expect(controller.generateNewFlowList(now), -1);
-    expect(flows.single, same(original));
-    expect(db.saves, 0);
+    controller.walkFlowList();
+
+    expect(flows.any((flow) => flow.type == PeriodType.flow), isFalse);
+    expect(flows.any((flow) => flow.type == PeriodType.virtual), isFalse);
+    expect(flows, isEmpty);
   });
 
-  test('successful planning replaces old plan and saves matching state',
-      () async {
-    tasks.single.timeNeeded = const Duration(minutes: 30);
+  test('walkFlowList populates scholar courses and fixed tasks into flowList',
+      () {
+    scholar.value.mockPeriods = [
+      Period(
+        uid: 'course-1',
+        type: PeriodType.classes,
+        startTime: now.add(const Duration(hours: 1)),
+        endTime: now.add(const Duration(hours: 2)),
+      ),
+    ];
+    tasks.add(Task(
+      uid: 'fixed-1',
+      type: TaskType.fixed,
+      startTime: now.add(const Duration(hours: 3)),
+      endTime: now.add(const Duration(hours: 4)),
+      repeatEndsTime: now.add(const Duration(days: 7)),
+    ));
+
     final controller = FlowController(now: () => now);
-    expect(controller.generateNewFlowList(now), 15);
-    await controller.saveFlowListToDb();
-    expect(flows.any((flow) => flow.uid == 'old-plan'), isFalse);
-    expect(db.flows.single.fromUid, 'task');
-    expect(db.tasks.single.timeSpent, Duration.zero);
+    controller.refreshScholarFlowList();
+    controller.walkFlowList();
+
+    expect(flows.length, 2);
+    expect(flows[0].type, PeriodType.classes);
+    expect(flows[0].uid, 'course-1');
+    expect(flows[1].type, PeriodType.user);
+    expect(flows[1].fromUid, 'fixed-1');
+    expect(db.saves, greaterThan(0));
   });
 
   testWidgets('progress ticks do not walk; external task edits do',
@@ -99,57 +127,38 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     }
     expect(controller.walks, 1);
-    expect(tasks.single.timeSpent, const Duration(minutes: 5, seconds: 5));
-    tasks.single.summary = 'changed';
+    tasks.add(Task(
+      uid: 'fixed-2',
+      type: TaskType.fixed,
+      startTime: now.add(const Duration(hours: 1)),
+      endTime: now.add(const Duration(hours: 2)),
+      repeatEndsTime: now.add(const Duration(days: 7)),
+    ));
     tasks.refresh();
     now = now.add(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
     expect(controller.walks, 2);
-    expect(flows.single.summary, 'changed');
+    expect(flows.any((f) => f.fromUid == 'fixed-2'), isTrue);
     await Get.delete<CountingFlowController>();
   });
 
-  testWidgets('task-page save and restart do not double-count progress',
+  testWidgets('scholar updates trigger flow list refresh and walk',
       (tester) async {
-    Get.put(CountingFlowController(now: () => now));
-    now = now.add(const Duration(seconds: 5));
+    final controller = Get.put(CountingFlowController(now: () => now));
+    expect(controller.walks, 1);
+    scholar.value.mockPeriods = [
+      Period(
+        uid: 'course-new',
+        type: PeriodType.classes,
+        startTime: now.add(const Duration(hours: 1)),
+        endTime: now.add(const Duration(hours: 2)),
+      ),
+    ];
+    scholar.refresh();
+    now = now.add(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
-    // A task edit can save between the flow controller's 15-second snapshots.
-    final taskController = TaskController();
-    await taskController.saveDeadlineListToDb();
-    expect(db.tasks.single.timeSpent, const Duration(minutes: 5, seconds: 5));
-    expect(db.flows.single.lastUpdateTime, now);
-    await Get.delete<CountingFlowController>();
-    tasks.assignAll(db.tasks.map((task) => task.copyWith()));
-    flows.assignAll(db.flows.map((flow) => flow.copyWith()));
-    now = now.add(const Duration(seconds: 10));
-    Get.put(CountingFlowController(now: () => now));
-    expect(tasks.single.timeSpent, const Duration(minutes: 5, seconds: 15));
-    await Get.delete<CountingFlowController>();
-  });
-
-  testWidgets('clock rollback never subtracts or re-accrues progress',
-      (tester) async {
-    Get.put(CountingFlowController(now: () => now));
-    final checkpoint = now;
-    now = now.subtract(const Duration(minutes: 1));
-    await tester.pump(const Duration(seconds: 1));
-    expect(tasks.single.timeSpent, const Duration(minutes: 5));
-    expect(flows.single.lastUpdateTime, checkpoint);
-    now = checkpoint.add(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
-    expect(tasks.single.timeSpent, const Duration(minutes: 5, seconds: 1));
-    await Get.delete<CountingFlowController>();
-  });
-
-  testWidgets('completed period saves its final progress with its removal',
-      (tester) async {
-    Get.put(CountingFlowController(now: () => now));
-    now = now.add(const Duration(minutes: 41));
-    await tester.pump(const Duration(seconds: 1));
-    expect(flows, isEmpty);
-    expect(db.flows, isEmpty);
-    expect(db.tasks.single.timeSpent, const Duration(minutes: 45));
+    expect(controller.walks, 2);
+    expect(flows.any((e) => e.uid == 'course-new'), isTrue);
     await Get.delete<CountingFlowController>();
   });
 }

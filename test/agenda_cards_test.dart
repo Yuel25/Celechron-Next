@@ -175,22 +175,14 @@ void main() {
     expect(edited, 0);
   });
 
-  testWidgets('task page completion saves status and preserves other plans',
+  testWidgets('task page completion saves status',
       (tester) async {
     final date = DateTime.now();
     final db = MemoryDatabase();
     final task = sampleTask(date);
     final other = sampleTask(date)..uid = 'other';
     final tasks = [task, other].obs;
-    final flows = [
-      for (final item in tasks)
-        Period(
-            uid: item.uid,
-            fromUid: item.uid,
-            type: PeriodType.flow,
-            startTime: date.add(const Duration(hours: 1)),
-            endTime: date.add(const Duration(hours: 2)))
-    ].obs;
+    final flows = <Period>[].obs;
     Get.put<DatabaseHelper>(db, tag: 'db');
     Get.put(Scholar().obs, tag: 'scholar');
     Get.put(tasks, tag: 'taskList');
@@ -207,10 +199,8 @@ void main() {
     await tester.tap(find.byType(CupertinoButton));
     await tester.pump();
     expect(task.status, TaskStatus.completed);
-    expect(flows.single.fromUid, 'other');
     expect(db.tasks.firstWhere((item) => item.uid == task.uid).status,
         TaskStatus.completed);
-    expect(db.flows.single.fromUid, 'other');
     await Get.deleteAll(force: true);
   });
 }

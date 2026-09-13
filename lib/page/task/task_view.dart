@@ -165,12 +165,6 @@ class TaskPage extends StatelessWidget {
       _taskController.taskList.add(res);
       _taskController.updateDeadlineList();
       _taskController.updateDeadlineListTime();
-      // 重新规划
-      _flowController.removeFlowInFlowList();
-      DateTime now = DateTime.now();
-      DateTime startsAt =
-          DateTime(now.year, now.month, now.day, now.hour, now.minute);
-      _flowController.generateNewFlowList(startsAt);
       _taskController.taskList.refresh();
     }
   }
@@ -183,8 +177,6 @@ class TaskPage extends StatelessWidget {
     } else {
       deadline.timeSpent = deadline.timeNeeded;
       deadline.status = TaskStatus.completed;
-      _flowController.flowList
-          .removeWhere((period) => period.fromUid == deadline.uid);
     }
     HapticFeedback.lightImpact();
     _taskController.updateDeadlineList();
@@ -277,12 +269,6 @@ class TaskPage extends StatelessWidget {
               deadline.status = TaskStatus.deleted;
               _taskController.updateDeadlineList();
               _taskController.updateDeadlineListTime();
-              // 重新规划
-              _flowController.removeFlowInFlowList();
-              DateTime now = DateTime.now();
-              DateTime startsAt =
-                  DateTime(now.year, now.month, now.day, now.hour, now.minute);
-              _flowController.generateNewFlowList(startsAt);
               _taskController.taskList.refresh();
             }
           },
@@ -300,12 +286,6 @@ class TaskPage extends StatelessWidget {
                 deadline.copy(res);
                 _taskController.updateDeadlineList();
                 _taskController.updateDeadlineListTime();
-                // 重新规划
-                _flowController.removeFlowInFlowList();
-                DateTime now = DateTime.now();
-                DateTime startsAt = DateTime(
-                    now.year, now.month, now.day, now.hour, now.minute);
-                _flowController.generateNewFlowList(startsAt);
                 _taskController.taskList.refresh();
               }
             },
@@ -389,7 +369,6 @@ class TaskPage extends StatelessWidget {
                                   if (_taskController
                                           .suspendAllDeadline(context) >
                                       0) {
-                                    _flowController.removeFlowInFlowList();
                                     _taskController.updateDeadlineListTime();
                                     _taskController.taskList.refresh();
                                   }
@@ -402,7 +381,6 @@ class TaskPage extends StatelessWidget {
                                   if (_taskController
                                           .continueAllDeadline(context) >
                                       0) {
-                                    _flowController.removeFlowInFlowList();
                                     _taskController.updateDeadlineListTime();
                                     _taskController.taskList.refresh();
                                   }
