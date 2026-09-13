@@ -45,7 +45,7 @@ class CourseListPage extends StatelessWidget {
                             backgroundColor:
                                 _courseListController.semesterIndex.value ==
                                         index
-                                    ? AppVisual.fgCyan
+                                    ? AppVisual.seasonWinter
                                     : CupertinoColors.systemFill,
                           ),
                           const SizedBox(width: 90),

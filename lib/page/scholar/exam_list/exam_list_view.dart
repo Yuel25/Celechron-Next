@@ -308,7 +308,7 @@ class _ExamListPageState extends State<ExamListPage> {
                               backgroundColor:
                                   _examListController.semesterIndex.value ==
                                           index
-                                      ? AppVisual.fgCyan
+                                      ? AppVisual.seasonWinter
                                       : CupertinoColors.systemFill,
                             ),
                             const SizedBox(width: 90),

@@ -105,7 +105,8 @@ abstract final class AppVisual {
     darkColor: Color(0xFF3B2B26),
   );
 
-  static const Color seasonWinter = CupertinoDynamicColor.withBrightness(
+  static const CupertinoDynamicColor seasonWinter =
+      CupertinoDynamicColor.withBrightness(
     color: Color(0xFFEAF3FF),
     darkColor: Color(0xFF253448),
   );

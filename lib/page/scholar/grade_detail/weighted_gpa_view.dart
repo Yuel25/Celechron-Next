@@ -66,7 +66,8 @@ class WeightedGpaPage extends StatelessWidget {
                           child: TwoLineCard(
                             title: '加权学分',
                             content: credits.toStringAsFixed(1),
-                            backgroundColor: AppVisual.fgSand,
+                            backgroundColor: AppVisual.modulePractice,
+                            accentColor: AppVisual.fgSand,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -74,7 +75,8 @@ class WeightedGpaPage extends StatelessWidget {
                           child: TwoLineCard(
                             title: '加权五分制',
                             content: gpa[0].toStringAsFixed(2),
-                            backgroundColor: AppVisual.fgSakura,
+                            backgroundColor: AppVisual.moduleHomework,
+                            accentColor: AppVisual.fgSakura,
                           ),
                         ),
                       ],
@@ -121,8 +123,11 @@ class WeightedGpaPage extends StatelessWidget {
                           },
                           backgroundColor:
                               _controller.semesterIndex.value == index
-                                  ? AppVisual.fgCyan
+                                  ? AppVisual.seasonWinter
                                   : CupertinoColors.systemFill,
+                          accentColor: _controller.semesterIndex.value == index
+                              ? AppVisual.fgCyan
+                              : null,
                         ),
                         if (index != _controller.semestersWithGrades.length - 1)
                           const SizedBox(width: 6),
