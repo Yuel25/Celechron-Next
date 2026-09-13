@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:celechron/design/custom_colors.dart';
 import 'package:celechron/design/app_empty_state.dart';
 import 'package:celechron/design/app_visual.dart';
@@ -91,6 +92,51 @@ class FlowPage extends StatelessWidget {
     );
   }
 
+  Future<void> _quickRefreshPlan(BuildContext context) async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    try {
+      final result = _flowController.generateNewFlowList(start);
+      if (result < 0) {
+        if (!context.mounted) return;
+        await showCupertinoDialog<void>(
+          context: context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            title: const Text('可用时间不足'),
+            content: const Text('可用时间不足。建议减少任务预计用时或打开规划面板调整。现有安排已保留。'),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                child: const Text('确定'),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+              ),
+            ],
+          ),
+        );
+      } else {
+        HapticFeedback.lightImpact();
+        await _flowController.saveFlowListToDb();
+        _flowController.flowList.refresh();
+      }
+    } on Object {
+      if (!context.mounted) return;
+      await showCupertinoDialog<void>(
+        context: context,
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: const Text('规划失败'),
+          content: const Text('暂时无法完成规划，请稍后重试。'),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              child: const Text('确定'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -113,6 +159,15 @@ class FlowPage extends StatelessWidget {
                       child: const Icon(
                         CupertinoIcons.refresh_circled,
                         semanticLabel: '刷新计划',
+                      ),
+                      onPressed: () async => _quickRefreshPlan(context),
+                    ),
+                    const SizedBox(width: 8),
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Icon(
+                        CupertinoIcons.slider_horizontal_3,
+                        semanticLabel: '安排专注时间',
                       ),
                       onPressed: () async {
                         await newFlowList(context);
