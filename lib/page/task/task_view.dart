@@ -78,21 +78,11 @@ class TaskPage extends StatelessWidget {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('返回'),
             ),
-            if (deadline.type == TaskType.deadline &&
-                deadline.effectiveTimeSpent < deadline.timeNeeded)
+            if (deadline.type == TaskType.deadline)
               CupertinoDialogAction(
                 onPressed: () {
-                  if (deadline.status != TaskStatus.completed) {
-                    if (deadline.focusedSince != null) {
-                      _taskController.pauseFocus(deadline);
-                    }
-                    deadline.status = TaskStatus.completed;
-                  } else {
-                    deadline.forceRefreshStatus();
-                  }
-                  _taskController.updateDeadlineListTime();
-                  _taskController.taskList.refresh();
                   Navigator.of(context).pop();
+                  _toggleCompletion(deadline);
                 },
                 child: Text(
                     '标记为${deadline.status == TaskStatus.completed ? '未' : ''}完成'),
@@ -106,8 +96,10 @@ class TaskPage extends StatelessWidget {
                     if (deadline.focusedSince != null) {
                       _taskController.pauseFocus(deadline);
                     }
-                    deadline.status = TaskStatus.suspended;
-                  } else {
+                    if (deadline.status == TaskStatus.running) {
+                      deadline.status = TaskStatus.suspended;
+                    }
+                  } else if (deadline.status == TaskStatus.suspended) {
                     deadline.status = TaskStatus.running;
                   }
                   _taskController.updateDeadlineListTime();
@@ -122,6 +114,9 @@ class TaskPage extends StatelessWidget {
               CupertinoDialogAction(
                 onPressed: () async {
                   Navigator.of(context).pop();
+                  if (deadline.focusedSince != null) {
+                    _taskController.pauseFocus(deadline);
+                  }
                   Task res = await showCupertinoModalPopup(
                         context: context,
                         builder: (BuildContext context) {
@@ -186,6 +181,9 @@ class TaskPage extends StatelessWidget {
       deadline.focusedSince = null;
       deadline.forceRefreshStatus();
     } else {
+      if (deadline.focusedSince != null) {
+        _taskController.pauseFocus(deadline);
+      }
       deadline.timeSpent = deadline.timeNeeded;
       deadline.focusedSince = null;
       deadline.status = TaskStatus.completed;
@@ -287,6 +285,9 @@ class TaskPage extends StatelessWidget {
           child: RoundRectangleCard(
             animate: false,
             onTap: () async {
+              if (deadline.focusedSince != null) {
+                _taskController.pauseFocus(deadline);
+              }
               // 直接导航到编辑页面
               Task? res = await Navigator.of(context, rootNavigator: true).push(
                 CupertinoPageRoute(
@@ -301,6 +302,7 @@ class TaskPage extends StatelessWidget {
                 _taskController.taskList.refresh();
               }
             },
+            onLongPress: () => showCardDialog(context, deadline),
             child: Padding(
               padding: const EdgeInsets.only(left: 8, right: 8),
               child: Obx(() => TaskCardContent(
@@ -312,6 +314,9 @@ class TaskPage extends StatelessWidget {
                       if (deadline.focusedSince != null) {
                         _taskController.pauseFocus(deadline);
                       } else {
+                        if (deadline.status == TaskStatus.suspended) {
+                          deadline.status = TaskStatus.running;
+                        }
                         _taskController.startFocus(deadline);
                       }
                     },
@@ -433,7 +438,7 @@ class TaskPage extends StatelessWidget {
                   child: AppEmptyState(
                     icon: CupertinoIcons.check_mark_circled,
                     title: '还没有任务',
-                    message: '添加一个 DDL 或固定日程，Celechron 会帮你安排时间。',
+                    message: '添加一个 DDL 或固定日程，按部就班高效专注。',
                     actionLabel: '添加任务',
                     onAction: () async {
                       await newDeadline(context);

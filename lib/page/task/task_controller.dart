@@ -48,17 +48,25 @@ class TaskController extends GetxController {
   }
 
   void _onTick() {
+    final now = _now();
     final changed = updateDeadlineList();
     if (changed) {
-      _lastFocusSaveAt = _now();
+      _lastFocusSaveAt = now;
       return;
+    }
+    for (var task in taskList.toList()) {
+      if (task.type == TaskType.deadline &&
+          task.focusedSince != null &&
+          task.effectiveTimeSpentAt(now) >= task.timeNeeded) {
+        pauseFocus(task);
+        return;
+      }
     }
     final hasFocusing = taskList.any((element) =>
         element.type == TaskType.deadline && element.focusedSince != null);
     if (hasFocusing) {
-      taskList.refresh();
-      if (_now().difference(_lastFocusSaveAt) >= const Duration(seconds: 15)) {
-        _lastFocusSaveAt = _now();
+      if (now.difference(_lastFocusSaveAt) >= const Duration(seconds: 15)) {
+        _lastFocusSaveAt = now;
         unawaited(saveDeadlineListToDb());
       }
     } else if (_saveFailed) {
@@ -71,6 +79,9 @@ class TaskController extends GetxController {
 
   void startFocus(Task task) {
     if (task.type != TaskType.deadline || task.status != TaskStatus.running) {
+      return;
+    }
+    if (task.endTime.isBefore(_now())) {
       return;
     }
     // 单计时器约束：先把其他 focusedSince != null 的任务暂停
@@ -91,10 +102,12 @@ class TaskController extends GetxController {
     if (task.focusedSince == null) {
       return;
     }
-    final spent = task.effectiveTimeSpentAt(_now());
+    final now = _now();
+    final settleEnd = now.isBefore(task.endTime) ? now : task.endTime;
+    final spent = task.effectiveTimeSpentAt(settleEnd);
     task.focusedSince = null;
     task.updateTimeSpent(spent);
-    _lastFocusSaveAt = _now();
+    _lastFocusSaveAt = now;
     updateDeadlineListTime();
     taskList.refresh();
   }
@@ -114,7 +127,7 @@ class TaskController extends GetxController {
         level: CelechronLogLevel.error,
         module: 'storage',
         operation: 'saveTaskFlowSnapshot',
-        message: '任务与规划快照保存失败，将重试',
+        message: '任务与时间线快照保存失败，将重试',
         error: error,
         stackTrace: stackTrace,
       );

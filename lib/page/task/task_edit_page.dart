@@ -517,17 +517,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                               });
                         },
                       ),
-                      CupertinoListTile(
-                        title: const Text('允许插入休息时间'),
-                        trailing: CupertinoSwitch(
-                          value: now.isBreakable,
-                          onChanged: (value) {
-                            setState(() {
-                              now.isBreakable = !now.isBreakable;
-                            });
-                          },
-                        ),
-                      ),
+
                     ],
                   ),
                 if (now.type == TaskType.fixed) ...[

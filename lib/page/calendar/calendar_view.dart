@@ -565,10 +565,6 @@ class CalendarPage extends StatelessWidget {
   }
 
   static Widget singleMarkerBuilder(context, day, Period event) {
-    if (event.type == PeriodType.virtual) {
-      return const SizedBox.shrink();
-    }
-
     Color color = AppSemanticColors.exam;
     if (event.type == PeriodType.classes) {
       color = TimeColors.colorFromHour(event.startTime.hour);

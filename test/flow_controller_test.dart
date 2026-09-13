@@ -118,7 +118,7 @@ void main() {
     expect(db.saves, greaterThan(0));
   });
 
-  testWidgets('progress ticks do not walk; external task edits do',
+  testWidgets('idle ticks do not walk; external task edits do',
       (tester) async {
     final controller = Get.put(CountingFlowController(now: () => now));
     expect(controller.walks, 1);
@@ -159,6 +159,39 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(controller.walks, 2);
     expect(flows.any((e) => e.uid == 'course-new'), isTrue);
+    await Get.delete<CountingFlowController>();
+  });
+
+  testWidgets('editing fixed task triggers walk and updates flowList timeline',
+      (tester) async {
+    final fixedTask = Task(
+      uid: 'fixed-edit-test',
+      summary: '旧固定日程',
+      type: TaskType.fixed,
+      startTime: now.add(const Duration(hours: 1)),
+      endTime: now.add(const Duration(hours: 2)),
+      repeatEndsTime: now.add(const Duration(days: 7)),
+    );
+    tasks.add(fixedTask);
+    final controller = Get.put(CountingFlowController(now: () => now));
+    expect(controller.walks, 1);
+    expect(
+        flows.any(
+            (f) => f.fromUid == 'fixed-edit-test' && f.summary == '旧固定日程'),
+        isTrue);
+
+    // 模拟从日历页或编辑页修改固定日程后的通知联动
+    fixedTask.summary = '新固定日程';
+    tasks.refresh();
+
+    now = now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(controller.walks, 2);
+    expect(
+        flows.any(
+            (f) => f.fromUid == 'fixed-edit-test' && f.summary == '新固定日程'),
+        isTrue);
     await Get.delete<CountingFlowController>();
   });
 }

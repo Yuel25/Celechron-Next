@@ -82,7 +82,7 @@ class FlowController extends GetxController {
         level: CelechronLogLevel.error,
         module: 'storage',
         operation: 'saveTaskFlowSnapshot',
-        message: '任务与规划快照保存失败，将重试',
+        message: '任务与时间线快照保存失败，将重试',
         error: error,
         stackTrace: stackTrace,
       );

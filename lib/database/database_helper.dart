@@ -42,6 +42,7 @@ class DatabaseHelper {
     Hive.registerAdapter(FuseAdapter());
     Hive.registerAdapter(CourseIdMapAdapter());
     optionsBox = await Hive.openBox(dbOptions);
+    await optionsBox.deleteAll(['workTime', 'restTime', 'allowTime']);
     scholarBox = await Hive.openBox(dbScholar);
     taskBox = await Hive.openBox(dbTask);
     flowBox = await Hive.openBox(dbFlow);
@@ -173,7 +174,7 @@ class DatabaseHelper {
         DateTime.fromMicrosecondsSinceEpoch(0);
   }
 
-  /// 两张旧表仅作为升级时的读取来源。进度和累计游标必须在同一条
+  /// 两张旧表仅作为升级时的读取来源。任务与时间线快照必须在同一条
   /// Hive 记录中提交，任何保存入口都必须提供同一时刻的完整状态。
   Future<void> saveTaskFlowSnapshot({
     required List<Task> tasks,

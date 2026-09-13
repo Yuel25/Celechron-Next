@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/semantics.dart';
 
 import '../model/period.dart';
 import '../model/task.dart';
@@ -221,14 +222,28 @@ class TaskCardContent extends StatelessWidget {
                                 CupertinoColors.label, context),
                         decoration:
                             completed ? TextDecoration.lineThrough : null)))),
-        if (deadline && task.status == TaskStatus.running && onToggleFocus != null) ...[
+        if (deadline &&
+            (task.status == TaskStatus.running ||
+                task.status == TaskStatus.suspended) &&
+            onToggleFocus != null) ...[
           const SizedBox(width: 8),
           Semantics(
             label: '${isFocusing ? '暂停专注' : '开始专注'}：${task.summary}',
             button: true,
+            toggled: isFocusing,
             child: CupertinoButton(
               padding: EdgeInsets.zero,
-              onPressed: onToggleFocus,
+              onPressed: () {
+                final wasFocusing = isFocusing;
+                onToggleFocus!();
+                final msg = wasFocusing ? '已暂停专注' : '已开始专注';
+                final direction =
+                    Directionality.maybeOf(context) ?? TextDirection.ltr;
+                try {
+                  SemanticsService.sendAnnouncement(
+                      View.of(context), msg, direction);
+                } catch (_) {}
+              },
               child: ExcludeSemantics(
                 child: Icon(
                   isFocusing

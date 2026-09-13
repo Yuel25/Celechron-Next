@@ -5,6 +5,7 @@ import 'package:celechron/design/app_visual.dart';
 class RoundRectangleCard extends StatefulWidget {
   final Widget child;
   final Function()? onTap;
+  final Function()? onLongPress;
   final bool animate;
   final List<BoxShadow> boxShadow;
   final EdgeInsets padding;
@@ -17,6 +18,7 @@ class RoundRectangleCard extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
+    this.onLongPress,
     this.animate = true,
     this.padding = const EdgeInsets.all(AppVisual.cardPadding),
     this.color,
@@ -107,7 +109,7 @@ class _RoundRectangleCardState extends State<RoundRectangleCard>
   Widget build(BuildContext context) {
     final brightness = CupertinoTheme.of(context).brightness ??
         MediaQuery.of(context).platformBrightness;
-    final isClickable = widget.onTap != null;
+    final isClickable = widget.onTap != null || widget.onLongPress != null;
 
     final core = Container(
       padding: widget.padding,
@@ -132,6 +134,7 @@ class _RoundRectangleCardState extends State<RoundRectangleCard>
         onTapUp: widget.animate ? _handleTapUp : null,
         onTapCancel: widget.animate ? _handleTapCancel : null,
         onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
         child: widget.animate
             ? ScaleTransition(scale: _scaleAnimation, child: core)
             : core,

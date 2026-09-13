@@ -88,15 +88,6 @@ void main() {
         ..uid = 'keep-task'
         ..summary = '不应被删除的任务';
       tasks.assignAll([targetTask, keepTask]);
-      flows.assignAll([
-        Period(
-          uid: 'flow-target',
-          fromUid: targetTask.uid,
-          type: PeriodType.flow,
-          startTime: now.add(const Duration(hours: 1)),
-          endTime: now.add(const Duration(hours: 2)),
-        ),
-      ]);
 
       final page = TaskPage();
 

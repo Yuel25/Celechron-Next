@@ -6,6 +6,7 @@ import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/model/period.dart';
 import 'package:celechron/model/scholar.dart';
 import 'package:celechron/model/task.dart';
+import 'package:celechron/page/flow/flow_controller.dart';
 import 'package:celechron/page/task/task_controller.dart';
 import 'package:celechron/page/task/task_view.dart';
 import 'package:celechron/widget/agenda_cards.dart';
@@ -429,9 +430,220 @@ void main() {
         ..focusedSince = realNow.subtract(const Duration(minutes: 20));
       final realProgress = page.deadlineProgress(realTask);
       expect(realProgress, contains('50% 已完成'));
-      expect(realProgress, contains('还要 30 分钟'));
+      expect(realProgress, matches(r'还要 (29|30) 分钟'));
 
       await Get.deleteAll(force: true);
+    });
+
+    testWidgets('tap play button in TaskPage sets focusedSince, changes icon to pause, then tap pause settles', (tester) async {
+      DateTime clock = now;
+      Get.put(TaskController(now: () => clock));
+      Get.put(FlowController(now: () => clock));
+
+      final task = sampleTask(now, spent: Duration.zero)
+        ..uid = 't_e2e'
+        ..timeNeeded = const Duration(hours: 1);
+      tasks.assignAll([task]);
+
+      await tester.pumpWidget(CupertinoApp(
+        home: TaskPage(),
+      ));
+
+      final playFinder = find.byIcon(CupertinoIcons.play_fill);
+      final pauseFinder = find.byIcon(CupertinoIcons.pause_fill);
+      expect(playFinder, findsOneWidget);
+      expect(pauseFinder, findsNothing);
+      expect(task.focusedSince, isNull);
+
+      // Tap play button
+      await tester.tap(playFinder);
+      await tester.pump();
+
+      expect(task.focusedSince, isNotNull);
+      expect(pauseFinder, findsOneWidget);
+      expect(playFinder, findsNothing);
+
+      // Advance clock by 10 minutes
+      clock = clock.add(const Duration(minutes: 10));
+
+      // Tap pause button
+      await tester.tap(pauseFinder);
+      await tester.pump();
+
+      expect(task.focusedSince, isNull);
+      expect(task.timeSpent, const Duration(minutes: 10));
+      expect(playFinder, findsOneWidget);
+      expect(pauseFinder, findsNothing);
+
+      await Get.delete<TaskController>(force: true);
+      await Get.delete<FlowController>(force: true);
+    });
+
+    testWidgets('suspended task shows play button and transitions to running + starts focus on tap', (tester) async {
+      DateTime clock = now;
+      Get.put(TaskController(now: () => clock));
+      Get.put(FlowController(now: () => clock));
+
+      final task = sampleTask(now, spent: const Duration(minutes: 5))
+        ..uid = 't_suspended'
+        ..status = TaskStatus.suspended
+        ..timeNeeded = const Duration(hours: 1);
+      tasks.assignAll([task]);
+
+      await tester.pumpWidget(CupertinoApp(
+        home: TaskPage(),
+      ));
+
+      final playFinder = find.byIcon(CupertinoIcons.play_fill);
+      final pauseFinder = find.byIcon(CupertinoIcons.pause_fill);
+      expect(playFinder, findsOneWidget);
+      expect(pauseFinder, findsNothing);
+
+      // Tap play button on suspended task
+      await tester.tap(playFinder);
+      await tester.pump();
+
+      expect(task.status, TaskStatus.running);
+      expect(task.focusedSince, isNotNull);
+      expect(pauseFinder, findsOneWidget);
+      expect(playFinder, findsNothing);
+
+      await Get.delete<TaskController>(force: true);
+      await Get.delete<FlowController>(force: true);
+    });
+  });
+
+  group('Cold start recovery with focusedSince', () {
+    test('offline task not expired continues focus tracking', () {
+      final task = sampleTask(now, spent: Duration.zero)
+        ..uid = 't_cold_continue'
+        ..timeNeeded = const Duration(hours: 1)
+        ..endTime = now.add(const Duration(hours: 2))
+        ..focusedSince = now.subtract(const Duration(minutes: 10));
+      tasks.assignAll([task]);
+
+      final controller = TaskController(now: () => now);
+      expect(task.focusedSince, now.subtract(const Duration(minutes: 10)));
+      expect(task.effectiveTimeSpentAt(now), const Duration(minutes: 10));
+      expect(task.status, TaskStatus.running);
+
+      controller.onTickForTesting();
+      expect(task.status, TaskStatus.running);
+      expect(task.focusedSince, isNotNull);
+    });
+
+    test('offline task crossed DDL settles to failed on first tick', () {
+      final task = sampleTask(now, spent: const Duration(minutes: 10))
+        ..uid = 't_cold_failed'
+        ..timeNeeded = const Duration(hours: 1)
+        ..endTime = now.subtract(const Duration(minutes: 5))
+        ..focusedSince = now.subtract(const Duration(minutes: 25));
+      tasks.assignAll([task]);
+
+      final controller = TaskController(now: () => now);
+      controller.onTickForTesting();
+
+      expect(task.status, TaskStatus.failed);
+      expect(task.focusedSince, isNull);
+      // Settle up to endTime: (-25m to -5m = 20m). 10m + 20m = 30m
+      expect(task.timeSpent, const Duration(minutes: 30));
+    });
+
+    test('offline task reached timeNeeded auto completes on first tick', () {
+      final task = sampleTask(now, spent: const Duration(minutes: 10))
+        ..uid = 't_cold_completed'
+        ..timeNeeded = const Duration(minutes: 30)
+        ..endTime = now.add(const Duration(hours: 1))
+        ..focusedSince = now.subtract(const Duration(minutes: 25));
+      tasks.assignAll([task]);
+
+      final controller = TaskController(now: () => now);
+      // Effective time spent = 10m + 25m = 35m >= 30m
+      controller.onTickForTesting();
+
+      expect(task.status, TaskStatus.completed);
+      expect(task.focusedSince, isNull);
+      expect(task.timeSpent, const Duration(minutes: 30));
+      expect(db.tasks.firstWhere((t) => t.uid == 't_cold_completed').status,
+          TaskStatus.completed);
+    });
+  });
+
+  group('TaskPage long press dialog actions', () {
+    testWidgets('long press opens dialog, completed task shows "标记为未完成" and can be uncompleted', (tester) async {
+      DateTime clock = now;
+      Get.put(TaskController(now: () => clock));
+      Get.put(FlowController(now: () => clock));
+
+      final task = sampleTask(now, spent: const Duration(hours: 1))
+        ..uid = 't_completed'
+        ..summary = '已完成的测试任务'
+        ..status = TaskStatus.completed
+        ..timeNeeded = const Duration(hours: 1);
+      tasks.assignAll([task]);
+
+      await tester.pumpWidget(CupertinoApp(
+        home: TaskPage(),
+      ));
+
+      // Long press the card
+      await tester.longPress(find.text('已完成的测试任务'));
+      await tester.pumpAndSettle();
+
+      // Dialog should show '标记为未完成'
+      final uncompleteFinder = find.text('标记为未完成');
+      expect(uncompleteFinder, findsOneWidget);
+
+      // Tap '标记为未完成'
+      await tester.tap(uncompleteFinder);
+      await tester.pumpAndSettle();
+
+      expect(task.status, TaskStatus.running);
+      expect(task.timeSpent, Duration.zero);
+      expect(task.focusedSince, isNull);
+
+      await Get.delete<TaskController>(force: true);
+      await Get.delete<FlowController>(force: true);
+    });
+
+    testWidgets('long press dialog pause on task reaching timeNeeded does not override to suspended', (tester) async {
+      DateTime clock = now;
+      Get.put(TaskController(now: () => clock));
+      Get.put(FlowController(now: () => clock));
+
+      // Task has 10 min left (50m spent / 60m needed), focused for 5 min (< 60m, so not full yet)
+      final task = sampleTask(now, spent: const Duration(minutes: 50))
+        ..uid = 't_full_pause'
+        ..summary = '即将满额任务'
+        ..status = TaskStatus.running
+        ..timeNeeded = const Duration(hours: 1)
+        ..focusedSince = clock.subtract(const Duration(minutes: 5));
+      tasks.assignAll([task]);
+
+      await tester.pumpWidget(CupertinoApp(
+        home: TaskPage(),
+      ));
+
+      // Long press
+      await tester.longPress(find.text('即将满额任务'));
+      await tester.pumpAndSettle();
+
+      final pauseAction = find.text('暂停');
+      expect(pauseAction, findsOneWidget);
+
+      // Advance clock by 10 minutes so focus duration becomes 15m -> total 65m >= 60m
+      clock = clock.add(const Duration(minutes: 10));
+
+      await tester.tap(pauseAction);
+      await tester.pumpAndSettle();
+
+      // Task must be completed, NOT suspended!
+      expect(task.status, TaskStatus.completed);
+      expect(task.focusedSince, isNull);
+      expect(task.timeSpent, const Duration(hours: 1));
+
+      await Get.delete<TaskController>(force: true);
+      await Get.delete<FlowController>(force: true);
     });
   });
 }

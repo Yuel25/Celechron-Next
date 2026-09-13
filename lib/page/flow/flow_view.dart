@@ -16,9 +16,7 @@ class FlowPage extends StatelessWidget {
 
   Color _periodColor(BuildContext context, Period period) {
     Color color;
-    if (period.type == PeriodType.flow) {
-      color = AppSemanticColors.focus;
-    } else if (period.type == PeriodType.user) {
+    if (period.type == PeriodType.user) {
       color = AppSemanticColors.schedule;
     } else if (period.type == PeriodType.test) {
       color = AppSemanticColors.exam;
@@ -49,8 +47,28 @@ class FlowPage extends StatelessWidget {
     ]);
   }
 
-  Widget createFirst(BuildContext context, Period period, String? title) =>
-      _agendaCard(context, period, title, featured: true);
+  Widget createFirst(BuildContext context, Period period) {
+    return Obx(() {
+      final now = _flowController.timeNow.value;
+      final isStarted = !period.startTime.isAfter(now);
+      final title = isStarted ? '正在进行' : '即将开始';
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        SubtitleRow(subtitle: title, padHorizontal: 0),
+        AgendaPeriodCard(
+          period: period,
+          now: now,
+          color: _periodColor(context, period),
+          featured: true,
+          onTap: period.type == PeriodType.classes
+              ? () => Navigator.of(context, rootNavigator: true).push(
+                  CupertinoPageRoute(
+                      builder: (context) =>
+                          CourseDetailPage(courseId: period.fromUid)))
+              : null,
+        ),
+      ]);
+    });
+  }
 
   Widget createCard(BuildContext context, Period period, String? title) =>
       _agendaCard(context, period, title, featured: false);
@@ -98,12 +116,6 @@ class FlowPage extends StatelessWidget {
                             ? createFirst(
                                 context,
                                 _flowController.flowList[index],
-                                index == 0
-                                    ? (_flowController
-                                            .flowList[index].hasStarted
-                                        ? '正在进行'
-                                        : '即将开始')
-                                    : null,
                               )
                             : createCard(
                                 context,
