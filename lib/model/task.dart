@@ -98,6 +98,8 @@ class Task {
   bool blockArrangements;
   @HiveField(15)
   String? fromUid;
+  @HiveField(16)
+  DateTime? focusedSince;
 
   Task({
     this.uid = '114514',
@@ -116,6 +118,7 @@ class Task {
     required this.repeatEndsTime,
     this.blockArrangements = true,
     this.fromUid,
+    this.focusedSince,
   });
 
   void reset() {
@@ -138,6 +141,7 @@ class Task {
     repeatEndsTime = DateTime(startTime.year, startTime.month, startTime.day);
     blockArrangements = true;
     fromUid = null;
+    focusedSince = null;
   }
 
   void copy(Task another) {
@@ -157,6 +161,7 @@ class Task {
     repeatEndsTime = another.repeatEndsTime;
     blockArrangements = another.blockArrangements;
     fromUid = another.fromUid;
+    focusedSince = another.focusedSince;
   }
 
   Task copyWith({
@@ -176,6 +181,7 @@ class Task {
     DateTime? repeatEndsTime,
     bool? blockArrangements,
     String? fromUid,
+    DateTime? focusedSince,
   }) {
     return Task(
       uid: uid ?? this.uid,
@@ -194,6 +200,7 @@ class Task {
       repeatEndsTime: repeatEndsTime ?? this.repeatEndsTime,
       blockArrangements: blockArrangements ?? this.blockArrangements,
       fromUid: fromUid ?? this.fromUid,
+      focusedSince: focusedSince ?? this.focusedSince,
     );
   }
 
@@ -212,19 +219,37 @@ class Task {
     return true;
   }
 
-  double getProgress() {
+  Duration effectiveTimeSpentAt([DateTime? now]) {
+    if (focusedSince == null) {
+      return timeSpent;
+    }
+    final current = now ?? DateTime.now();
+    final diff = current.difference(focusedSince!);
+    final extra = diff.isNegative ? Duration.zero : diff;
+    return timeSpent + extra;
+  }
+
+  Duration get effectiveTimeSpent => effectiveTimeSpentAt();
+
+  double getProgress([DateTime? now]) {
     double progress = 0;
+    final current = now ?? DateTime.now();
     if (type == TaskType.fixed) {
-      if (DateTime.now().isBefore(startTime)) {
+      if (current.isBefore(startTime)) {
         progress = 0;
-      } else if (DateTime.now().isAfter(endTime)) {
+      } else if (current.isAfter(endTime)) {
         progress = 1;
       } else {
-        progress = (DateTime.now().difference(startTime).inSeconds) /
+        progress = (current.difference(startTime).inSeconds) /
             (endTime.difference(startTime).inSeconds);
       }
     } else if (type == TaskType.deadline) {
-      progress = timeSpent.inSeconds / timeNeeded.inSeconds;
+      if (timeNeeded.inSeconds <= 0) {
+        progress = 1.0;
+      } else {
+        progress = effectiveTimeSpentAt(current).inSeconds /
+            timeNeeded.inSeconds;
+      }
     }
     if (progress > 1) {
       progress = 1;

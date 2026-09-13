@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/model/task.dart';
@@ -6,11 +7,15 @@ import 'package:celechron/model/period.dart';
 import 'package:celechron/services/diagnostic_log_service.dart';
 
 class TaskController extends GetxController {
+  TaskController({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
   final taskList = Get.find<RxList<Task>>(tag: 'taskList');
   final taskListLastUpdate = Get.find<Rx<DateTime>>(tag: 'taskListLastUpdate');
   final _db = Get.find<DatabaseHelper>(tag: 'db');
   Timer? _timer;
   bool _saveFailed = false;
+  DateTime _lastFocusSaveAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   List<Task> get todoDeadlineList => taskList
       .where((element) => (element.type == TaskType.deadline &&
@@ -31,8 +36,7 @@ class TaskController extends GetxController {
   void onInit() {
     updateDeadlineList();
     _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      final changed = updateDeadlineList();
-      if (_saveFailed && !changed) unawaited(saveDeadlineListToDb());
+      _onTick();
     });
     super.onInit();
   }
@@ -41,6 +45,58 @@ class TaskController extends GetxController {
   void onClose() {
     _timer?.cancel();
     super.onClose();
+  }
+
+  void _onTick() {
+    final changed = updateDeadlineList();
+    if (changed) {
+      _lastFocusSaveAt = _now();
+      return;
+    }
+    final hasFocusing = taskList.any((element) =>
+        element.type == TaskType.deadline && element.focusedSince != null);
+    if (hasFocusing) {
+      taskList.refresh();
+      if (_now().difference(_lastFocusSaveAt) >= const Duration(seconds: 15)) {
+        _lastFocusSaveAt = _now();
+        unawaited(saveDeadlineListToDb());
+      }
+    } else if (_saveFailed) {
+      unawaited(saveDeadlineListToDb());
+    }
+  }
+
+  @visibleForTesting
+  void onTickForTesting() => _onTick();
+
+  void startFocus(Task task) {
+    if (task.type != TaskType.deadline || task.status != TaskStatus.running) {
+      return;
+    }
+    // 单计时器约束：先把其他 focusedSince != null 的任务暂停
+    for (var other in taskList.toList()) {
+      if (other != task && other.focusedSince != null) {
+        pauseFocus(other);
+      }
+    }
+    if (task.focusedSince == null) {
+      task.focusedSince = _now();
+      _lastFocusSaveAt = _now();
+      updateDeadlineListTime();
+      taskList.refresh();
+    }
+  }
+
+  void pauseFocus(Task task) {
+    if (task.focusedSince == null) {
+      return;
+    }
+    final spent = task.effectiveTimeSpentAt(_now());
+    task.focusedSince = null;
+    task.updateTimeSpent(spent);
+    _lastFocusSaveAt = _now();
+    updateDeadlineListTime();
+    taskList.refresh();
   }
 
   Future<void> saveDeadlineListToDb() async {
@@ -70,7 +126,7 @@ class TaskController extends GetxController {
   }
 
   void updateDeadlineListTime() {
-    taskListLastUpdate.value = DateTime.now();
+    taskListLastUpdate.value = _now();
     // 所有改字段不改列表结构的用户操作（标记完成、暂停/继续等）都经过这里，即时落盘
     saveDeadlineListToDb();
   }
@@ -95,13 +151,13 @@ class TaskController extends GetxController {
         if (deadline.timeSpent >= deadline.timeNeeded) {
           deadline.status = TaskStatus.completed;
         } else if (deadline.status != TaskStatus.completed &&
-            deadline.endTime.isBefore(DateTime.now())) {
+            deadline.endTime.isBefore(_now())) {
           deadline.status = TaskStatus.failed;
         }
       } else if (deadline.type == TaskType.fixed) {
         deadline.refreshStatus();
         existingUid.add(deadline.uid);
-        while (deadline.endTime.isBefore(DateTime.now()) &&
+        while (deadline.endTime.isBefore(_now()) &&
             deadline.status != TaskStatus.outdated) {
           Task temp = deadline.copyWith(
             summary: '${deadline.summary}（过去日程）',
@@ -174,6 +230,9 @@ class TaskController extends GetxController {
     int count = 0;
     for (var x in taskList) {
       if (x.type == TaskType.deadline && x.status == TaskStatus.running) {
+        if (x.focusedSince != null) {
+          pauseFocus(x);
+        }
         x.status = TaskStatus.suspended;
         count++;
       }

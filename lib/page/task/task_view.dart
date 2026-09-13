@@ -19,8 +19,12 @@ class TaskPage extends StatelessWidget {
   final _taskController = Get.put(TaskController());
   final _flowController = Get.put(FlowController());
 
-  String deadlineProgress(Task deadline) {
-    return '${(deadline.getProgress() * 100).toInt()}% 已完成：预期 ${durationToString(deadline.timeNeeded)}，还要 ${durationToString(deadline.timeNeeded <= deadline.timeSpent ? Duration.zero : (deadline.timeNeeded - deadline.timeSpent))}';
+  String deadlineProgress(Task deadline, [DateTime? now]) {
+    final effective = deadline.effectiveTimeSpentAt(now);
+    final remaining = deadline.timeNeeded <= effective
+        ? Duration.zero
+        : deadline.timeNeeded - effective;
+    return '${(deadline.getProgress(now) * 100).toInt()}% 已完成：预期 ${durationToString(deadline.timeNeeded)}，还要 ${durationToString(remaining)}';
   }
 
   Future<void> showCardDialog(BuildContext context, Task deadline) async {
@@ -75,10 +79,13 @@ class TaskPage extends StatelessWidget {
               child: const Text('返回'),
             ),
             if (deadline.type == TaskType.deadline &&
-                deadline.timeSpent < deadline.timeNeeded)
+                deadline.effectiveTimeSpent < deadline.timeNeeded)
               CupertinoDialogAction(
                 onPressed: () {
                   if (deadline.status != TaskStatus.completed) {
+                    if (deadline.focusedSince != null) {
+                      _taskController.pauseFocus(deadline);
+                    }
                     deadline.status = TaskStatus.completed;
                   } else {
                     deadline.forceRefreshStatus();
@@ -96,6 +103,9 @@ class TaskPage extends StatelessWidget {
               CupertinoDialogAction(
                 onPressed: () {
                   if (deadline.status == TaskStatus.running) {
+                    if (deadline.focusedSince != null) {
+                      _taskController.pauseFocus(deadline);
+                    }
                     deadline.status = TaskStatus.suspended;
                   } else {
                     deadline.status = TaskStatus.running;
@@ -173,9 +183,11 @@ class TaskPage extends StatelessWidget {
     if (deadline.type != TaskType.deadline) return;
     if (deadline.status == TaskStatus.completed) {
       deadline.timeSpent = Duration.zero;
+      deadline.focusedSince = null;
       deadline.forceRefreshStatus();
     } else {
       deadline.timeSpent = deadline.timeNeeded;
+      deadline.focusedSince = null;
       deadline.status = TaskStatus.completed;
     }
     HapticFeedback.lightImpact();
@@ -296,6 +308,14 @@ class TaskPage extends StatelessWidget {
                     now: _flowController.timeNow.value,
                     color: color,
                     onToggle: () => _toggleCompletion(deadline),
+                    onToggleFocus: () {
+                      if (deadline.focusedSince != null) {
+                        _taskController.pauseFocus(deadline);
+                      } else {
+                        _taskController.startFocus(deadline);
+                      }
+                    },
+                    isFocusing: deadline.focusedSince != null,
                   )),
             ),
           ),

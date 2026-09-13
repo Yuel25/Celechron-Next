@@ -196,7 +196,7 @@ void main() {
             child: Builder(
                 builder: (context) => page.createCard(
                     context, task, CupertinoColors.activeBlue, null)))));
-    await tester.tap(find.byType(CupertinoButton));
+    await tester.tap(find.byType(CupertinoButton).first);
     await tester.pump();
     expect(task.status, TaskStatus.completed);
     expect(db.tasks.firstWhere((item) => item.uid == task.uid).status,

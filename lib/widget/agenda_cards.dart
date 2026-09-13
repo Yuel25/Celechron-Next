@@ -160,16 +160,21 @@ class AgendaPeriodCard extends StatelessWidget {
 }
 
 class TaskCardContent extends StatelessWidget {
-  const TaskCardContent(
-      {super.key,
-      required this.task,
-      required this.now,
-      required this.color,
-      required this.onToggle});
+  const TaskCardContent({
+    super.key,
+    required this.task,
+    required this.now,
+    required this.color,
+    required this.onToggle,
+    this.onToggleFocus,
+    this.isFocusing = false,
+  });
   final Task task;
   final DateTime now;
   final Color color;
   final VoidCallback onToggle;
+  final VoidCallback? onToggleFocus;
+  final bool isFocusing;
 
   @override
   Widget build(BuildContext context) {
@@ -178,8 +183,8 @@ class TaskCardContent extends StatelessWidget {
     final overdue = deadline && !completed && task.endTime.isBefore(now);
     final secondary =
         CupertinoDynamicColor.resolve(CupertinoColors.secondaryLabel, context);
-    final remaining = task.timeNeeded > task.timeSpent
-        ? task.timeNeeded - task.timeSpent
+    final remaining = task.timeNeeded > task.effectiveTimeSpentAt(now)
+        ? task.timeNeeded - task.effectiveTimeSpentAt(now)
         : Duration.zero;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -216,6 +221,26 @@ class TaskCardContent extends StatelessWidget {
                                 CupertinoColors.label, context),
                         decoration:
                             completed ? TextDecoration.lineThrough : null)))),
+        if (deadline && task.status == TaskStatus.running && onToggleFocus != null) ...[
+          const SizedBox(width: 8),
+          Semantics(
+            label: '${isFocusing ? '暂停专注' : '开始专注'}：${task.summary}',
+            button: true,
+            child: CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: onToggleFocus,
+              child: ExcludeSemantics(
+                child: Icon(
+                  isFocusing
+                      ? CupertinoIcons.pause_fill
+                      : CupertinoIcons.play_fill,
+                  color: isFocusing ? CupertinoColors.systemOrange : color,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ],
       ]),
       const SizedBox(height: 8),
       Text(
@@ -251,9 +276,9 @@ class TaskCardContent extends StatelessWidget {
           const SizedBox(height: 8),
           Semantics(
             label: '任务完成进度',
-            value: '${(task.getProgress().clamp(0.0, 1.0) * 100).round()}%',
+            value: '${(task.getProgress(now).clamp(0.0, 1.0) * 100).round()}%',
             child: _ThinProgressBar(
-              value: task.getProgress(),
+              value: task.getProgress(now),
               color: color,
               height: 4,
             ),
