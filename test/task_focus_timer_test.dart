@@ -90,7 +90,8 @@ void main() {
       expect(task.effectiveTimeSpent, const Duration(minutes: 20));
     });
 
-    test('effectiveTimeSpent accrues elapsed time when focusedSince is set', () {
+    test('effectiveTimeSpent accrues elapsed time when focusedSince is set',
+        () {
       final start = now.subtract(const Duration(minutes: 15));
       final task = sampleTask(now, spent: const Duration(minutes: 20))
         ..focusedSince = start;
@@ -129,7 +130,8 @@ void main() {
       task2.copy(task1);
       expect(task2.focusedSince, now);
 
-      final task3 = task1.copyWith(focusedSince: now.add(const Duration(minutes: 5)));
+      final task3 =
+          task1.copyWith(focusedSince: now.add(const Duration(minutes: 5)));
       expect(task3.focusedSince, now.add(const Duration(minutes: 5)));
 
       task1.reset();
@@ -145,7 +147,9 @@ void main() {
   });
 
   group('TaskController: startFocus & pauseFocus', () {
-    test('startFocus sets anchor, enforces single timer, persists and refreshes', () {
+    test(
+        'startFocus sets anchor, enforces single timer, persists and refreshes',
+        () {
       DateTime clock = now;
       final controller = TaskController(now: () => clock);
 
@@ -182,11 +186,14 @@ void main() {
       expect(fixedTask.focusedSince, isNull);
     });
 
-    test('pauseFocus accrues effectiveTimeSpent, clears anchor, and saves to DB', () {
+    test(
+        'pauseFocus accrues effectiveTimeSpent, clears anchor, and saves to DB',
+        () {
       DateTime clock = now;
       final controller = TaskController(now: () => clock);
 
-      final task = sampleTask(now, spent: const Duration(minutes: 15))..uid = 't1';
+      final task = sampleTask(now, spent: const Duration(minutes: 15))
+        ..uid = 't1';
       tasks.assignAll([task]);
 
       controller.startFocus(task);
@@ -202,10 +209,13 @@ void main() {
       // 15m + 25m = 40m
       expect(task.timeSpent, const Duration(minutes: 40));
       expect(db.saves, greaterThan(prevSaves));
-      expect(db.tasks.firstWhere((t) => t.uid == 't1').timeSpent, const Duration(minutes: 40));
+      expect(db.tasks.firstWhere((t) => t.uid == 't1').timeSpent,
+          const Duration(minutes: 40));
     });
 
-    test('pauseFocus automatically sets status to completed when timeSpent reaches timeNeeded', () {
+    test(
+        'pauseFocus automatically sets status to completed when timeSpent reaches timeNeeded',
+        () {
       DateTime clock = now;
       final controller = TaskController(now: () => clock);
 
@@ -225,7 +235,8 @@ void main() {
       expect(task.focusedSince, isNull);
       expect(task.timeSpent, const Duration(hours: 1)); // clamped to timeNeeded
       expect(task.status, TaskStatus.completed);
-      expect(db.tasks.firstWhere((t) => t.uid == 't1').status, TaskStatus.completed);
+      expect(db.tasks.firstWhere((t) => t.uid == 't1').status,
+          TaskStatus.completed);
     });
 
     test('pauseFocus returns early if not focusing', () {
@@ -272,7 +283,8 @@ void main() {
       expect(db.saves, savesAfterStart + 2);
     });
 
-    test('updateDeadlineList does not flag changed for ongoing focus ticks', () {
+    test('updateDeadlineList does not flag changed for ongoing focus ticks',
+        () {
       DateTime clock = now;
       final controller = TaskController(now: () => clock);
 
@@ -327,7 +339,8 @@ void main() {
       await box.close();
     });
 
-    test('reading legacy record without field 16 defaults focusedSince to null', () {
+    test('reading legacy record without field 16 defaults focusedSince to null',
+        () {
       final adapter = DeadlineAdapter();
       final legacyFields = <int, dynamic>{
         0: 'legacy_task',
@@ -359,7 +372,9 @@ void main() {
   });
 
   group('Widget integration: TaskCardContent & TaskPage', () {
-    testWidgets('TaskCardContent renders play button for running deadline and toggles focus', (tester) async {
+    testWidgets(
+        'TaskCardContent renders play button for running deadline and toggles focus',
+        (tester) async {
       bool toggled = false;
       bool focusToggled = false;
 
@@ -388,7 +403,9 @@ void main() {
       expect(toggled, isFalse);
     });
 
-    testWidgets('TaskCardContent displays pause icon when isFocusing is true and shows remaining based on effectiveTimeSpent', (tester) async {
+    testWidgets(
+        'TaskCardContent displays pause icon when isFocusing is true and shows remaining based on effectiveTimeSpent',
+        (tester) async {
       // 1 hour needed, 10 min spent, focused for 20 min -> remaining = 30 min
       final task = sampleTask(now, spent: const Duration(minutes: 10))
         ..timeNeeded = const Duration(hours: 1)
@@ -435,7 +452,9 @@ void main() {
       await Get.deleteAll(force: true);
     });
 
-    testWidgets('tap play button in TaskPage sets focusedSince, changes icon to pause, then tap pause settles', (tester) async {
+    testWidgets(
+        'tap play button in TaskPage sets focusedSince, changes icon to pause, then tap pause settles',
+        (tester) async {
       DateTime clock = now;
       Get.put(TaskController(now: () => clock));
       Get.put(FlowController(now: () => clock));
@@ -479,7 +498,9 @@ void main() {
       await Get.delete<FlowController>(force: true);
     });
 
-    testWidgets('suspended task shows play button and transitions to running + starts focus on tap', (tester) async {
+    testWidgets(
+        'suspended task shows play button and transitions to running + starts focus on tap',
+        (tester) async {
       DateTime clock = now;
       Get.put(TaskController(now: () => clock));
       Get.put(FlowController(now: () => clock));
@@ -570,7 +591,9 @@ void main() {
   });
 
   group('TaskPage long press dialog actions', () {
-    testWidgets('long press opens dialog, completed task shows "标记为未完成" and can be uncompleted', (tester) async {
+    testWidgets(
+        'long press opens dialog, completed task shows "标记为未完成" and can be uncompleted',
+        (tester) async {
       DateTime clock = now;
       Get.put(TaskController(now: () => clock));
       Get.put(FlowController(now: () => clock));
@@ -606,7 +629,9 @@ void main() {
       await Get.delete<FlowController>(force: true);
     });
 
-    testWidgets('long press dialog pause on task reaching timeNeeded does not override to suspended', (tester) async {
+    testWidgets(
+        'long press dialog pause on task reaching timeNeeded does not override to suspended',
+        (tester) async {
       DateTime clock = now;
       Get.put(TaskController(now: () => clock));
       Get.put(FlowController(now: () => clock));

@@ -517,7 +517,6 @@ class _TaskEditPageState extends State<TaskEditPage> {
                               });
                         },
                       ),
-
                     ],
                   ),
                 if (now.type == TaskType.fixed) ...[

@@ -37,7 +37,9 @@ void main() {
   });
 
   group('Focus timer and progress bar audit specifications', () {
-    test('focusing deadline task settles elapsed time up to endTime and clears anchor upon expiration', () {
+    test(
+        'focusing deadline task settles elapsed time up to endTime and clears anchor upon expiration',
+        () {
       DateTime clock = now;
       final controller = TaskController(now: () => clock);
 
@@ -69,7 +71,9 @@ void main() {
       expect(db.saves, savesBefore);
     });
 
-    test('focusing deadline task completing timeNeeded at deadline transitions to completed', () {
+    test(
+        'focusing deadline task completing timeNeeded at deadline transitions to completed',
+        () {
       DateTime clock = now;
       final controller = TaskController(now: () => clock);
 
@@ -93,7 +97,9 @@ void main() {
       expect(task.focusedSince, isNull);
     });
 
-    test('suspendAllDeadline retains completed status when pauseFocus finishes the task', () {
+    test(
+        'suspendAllDeadline retains completed status when pauseFocus finishes the task',
+        () {
       DateTime clock = now;
       final controller = TaskController(now: () => clock);
 
@@ -115,10 +121,13 @@ void main() {
       expect(task.status, TaskStatus.completed);
       expect(task.timeSpent, const Duration(minutes: 30));
       expect(task.focusedSince, isNull);
-      expect(suspendedCount, 0, reason: 'Completed task should not be counted as suspended');
+      expect(suspendedCount, 0,
+          reason: 'Completed task should not be counted as suspended');
     });
 
-    test('Task.getProgress for fixed task handles zero duration without returning NaN', () {
+    test(
+        'Task.getProgress for fixed task handles zero duration without returning NaN',
+        () {
       final task = Task(
         type: TaskType.fixed,
         startTime: now,

@@ -139,7 +139,8 @@ void main() {
         final courseProgFinder = find.byWidgetPredicate(
             (w) => w is Semantics && w.properties.label == '当前事项进度');
         expect(courseProgFinder, findsOneWidget);
-        expect(tester.widget<Semantics>(courseProgFinder).properties.value, '44%');
+        expect(
+            tester.widget<Semantics>(courseProgFinder).properties.value, '44%');
         final taskProgFinder = find.byWidgetPredicate(
             (w) => w is Semantics && w.properties.label == '任务完成进度');
         expect(taskProgFinder, findsOneWidget);
@@ -183,8 +184,7 @@ void main() {
     expect(edited, 0);
   });
 
-  testWidgets('task page completion saves status',
-      (tester) async {
+  testWidgets('task page completion saves status', (tester) async {
     final date = DateTime.now();
     final db = MemoryDatabase();
     final task = sampleTask(date);
@@ -212,7 +212,9 @@ void main() {
     await Get.deleteAll(force: true);
   });
 
-  testWidgets('AgendaPeriodCard featured active card renders progress bar with exact percentage', (tester) async {
+  testWidgets(
+      'AgendaPeriodCard featured active card renders progress bar with exact percentage',
+      (tester) async {
     final base = DateTime(2030, 9, 5, 10, 0, 0);
     final coursePeriod = Period(
       summary: '高等数学',
@@ -238,7 +240,8 @@ void main() {
     expect(tester.widget<Semantics>(progFinder).properties.value, '50%');
   });
 
-  testWidgets('TaskCardContent progress bar increases as focus time accrues', (tester) async {
+  testWidgets('TaskCardContent progress bar increases as focus time accrues',
+      (tester) async {
     final start = DateTime(2030, 9, 5, 10, 0, 0);
     final deadlineTask = sampleTask(start, spent: Duration.zero)
       ..timeNeeded = const Duration(minutes: 60)

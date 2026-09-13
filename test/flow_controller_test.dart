@@ -118,8 +118,7 @@ void main() {
     expect(db.saves, greaterThan(0));
   });
 
-  testWidgets('idle ticks do not walk; external task edits do',
-      (tester) async {
+  testWidgets('idle ticks do not walk; external task edits do', (tester) async {
     final controller = Get.put(CountingFlowController(now: () => now));
     expect(controller.walks, 1);
     for (var second = 0; second < 5; second++) {
@@ -176,8 +175,8 @@ void main() {
     final controller = Get.put(CountingFlowController(now: () => now));
     expect(controller.walks, 1);
     expect(
-        flows.any(
-            (f) => f.fromUid == 'fixed-edit-test' && f.summary == '旧固定日程'),
+        flows
+            .any((f) => f.fromUid == 'fixed-edit-test' && f.summary == '旧固定日程'),
         isTrue);
 
     // 模拟从日历页或编辑页修改固定日程后的通知联动
@@ -189,8 +188,8 @@ void main() {
 
     expect(controller.walks, 2);
     expect(
-        flows.any(
-            (f) => f.fromUid == 'fixed-edit-test' && f.summary == '新固定日程'),
+        flows
+            .any((f) => f.fromUid == 'fixed-edit-test' && f.summary == '新固定日程'),
         isTrue);
     await Get.delete<CountingFlowController>();
   });

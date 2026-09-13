@@ -249,8 +249,8 @@ class Task {
       if (timeNeeded.inSeconds <= 0) {
         progress = 1.0;
       } else {
-        progress = effectiveTimeSpentAt(current).inSeconds /
-            timeNeeded.inSeconds;
+        progress =
+            effectiveTimeSpentAt(current).inSeconds / timeNeeded.inSeconds;
       }
     }
     if (progress > 1) {
