@@ -235,13 +235,15 @@ class Task {
     double progress = 0;
     final current = now ?? DateTime.now();
     if (type == TaskType.fixed) {
-      if (current.isBefore(startTime)) {
+      final totalSeconds = endTime.difference(startTime).inSeconds;
+      if (totalSeconds <= 0) {
+        progress = current.isBefore(startTime) ? 0.0 : 1.0;
+      } else if (current.isBefore(startTime)) {
         progress = 0;
       } else if (current.isAfter(endTime)) {
         progress = 1;
       } else {
-        progress = (current.difference(startTime).inSeconds) /
-            (endTime.difference(startTime).inSeconds);
+        progress = (current.difference(startTime).inSeconds) / totalSeconds;
       }
     } else if (type == TaskType.deadline) {
       if (timeNeeded.inSeconds <= 0) {

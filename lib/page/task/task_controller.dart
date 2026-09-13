@@ -143,15 +143,24 @@ class TaskController extends GetxController {
 
     Set<String> existingUid = {};
     List<Task> newDeadlineList = [];
+    final now = _now();
     for (var deadline in taskList) {
       final oldStatus = deadline.status;
       final oldEndTime = deadline.endTime;
-      deadline.refreshStatus();
       if (deadline.type == TaskType.deadline) {
+        if (deadline.focusedSince != null && deadline.endTime.isBefore(now)) {
+          final settleEnd =
+              now.isBefore(deadline.endTime) ? now : deadline.endTime;
+          final elapsed = settleEnd.difference(deadline.focusedSince!);
+          final extra = elapsed.isNegative ? Duration.zero : elapsed;
+          deadline.focusedSince = null;
+          deadline.updateTimeSpent(deadline.timeSpent + extra);
+          changed = true;
+        }
         if (deadline.timeSpent >= deadline.timeNeeded) {
           deadline.status = TaskStatus.completed;
         } else if (deadline.status != TaskStatus.completed &&
-            deadline.endTime.isBefore(_now())) {
+            deadline.endTime.isBefore(now)) {
           deadline.status = TaskStatus.failed;
         }
       } else if (deadline.type == TaskType.fixed) {
@@ -233,8 +242,10 @@ class TaskController extends GetxController {
         if (x.focusedSince != null) {
           pauseFocus(x);
         }
-        x.status = TaskStatus.suspended;
-        count++;
+        if (x.status == TaskStatus.running) {
+          x.status = TaskStatus.suspended;
+          count++;
+        }
       }
     }
     return count;

@@ -136,6 +136,14 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text('还剩 25 分钟'), findsOneWidget);
         expect(find.text('今天 23:59 截止'), findsOneWidget);
+        final courseProgFinder = find.byWidgetPredicate(
+            (w) => w is Semantics && w.properties.label == '当前事项进度');
+        expect(courseProgFinder, findsOneWidget);
+        expect(tester.widget<Semantics>(courseProgFinder).properties.value, '44%');
+        final taskProgFinder = find.byWidgetPredicate(
+            (w) => w is Semantics && w.properties.label == '任务完成进度');
+        expect(taskProgFinder, findsOneWidget);
+        expect(tester.widget<Semantics>(taskProgFinder).properties.value, '0%');
         if (previews) {
           final render = boundary.currentContext!.findRenderObject()!
               as RenderRepaintBoundary;
@@ -202,5 +210,68 @@ void main() {
     expect(db.tasks.firstWhere((item) => item.uid == task.uid).status,
         TaskStatus.completed);
     await Get.deleteAll(force: true);
+  });
+
+  testWidgets('AgendaPeriodCard featured active card renders progress bar with exact percentage', (tester) async {
+    final base = DateTime(2030, 9, 5, 10, 0, 0);
+    final coursePeriod = Period(
+      summary: '高等数学',
+      location: '东一 101',
+      startTime: base.subtract(const Duration(minutes: 30)),
+      endTime: base.add(const Duration(minutes: 30)),
+    );
+
+    await tester.pumpWidget(CupertinoApp(
+      home: CupertinoPageScaffold(
+        child: AgendaPeriodCard(
+          period: coursePeriod,
+          now: base,
+          color: CupertinoColors.activeBlue,
+          featured: true,
+        ),
+      ),
+    ));
+
+    final progFinder = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == '当前事项进度');
+    expect(progFinder, findsOneWidget);
+    expect(tester.widget<Semantics>(progFinder).properties.value, '50%');
+  });
+
+  testWidgets('TaskCardContent progress bar increases as focus time accrues', (tester) async {
+    final start = DateTime(2030, 9, 5, 10, 0, 0);
+    final deadlineTask = sampleTask(start, spent: Duration.zero)
+      ..timeNeeded = const Duration(minutes: 60)
+      ..focusedSince = start;
+
+    Widget buildCard(DateTime current) {
+      return CupertinoApp(
+        home: CupertinoPageScaffold(
+          child: TaskCardContent(
+            task: deadlineTask,
+            now: current,
+            color: CupertinoColors.activeBlue,
+            onToggle: () {},
+            isFocusing: true,
+          ),
+        ),
+      );
+    }
+
+    final taskProgFinder = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == '任务完成进度');
+
+    // At start + 15m (15m / 60m = 25%)
+    await tester.pumpWidget(buildCard(start.add(const Duration(minutes: 15))));
+    expect(taskProgFinder, findsOneWidget);
+    expect(tester.widget<Semantics>(taskProgFinder).properties.value, '25%');
+
+    // At start + 45m (45m / 60m = 75%)
+    await tester.pumpWidget(buildCard(start.add(const Duration(minutes: 45))));
+    expect(tester.widget<Semantics>(taskProgFinder).properties.value, '75%');
+
+    // At start + 60m (60m / 60m = 100%)
+    await tester.pumpWidget(buildCard(start.add(const Duration(minutes: 60))));
+    expect(tester.widget<Semantics>(taskProgFinder).properties.value, '100%');
   });
 }
