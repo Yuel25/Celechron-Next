@@ -295,7 +295,8 @@ class TaskPage extends StatelessWidget {
                   builder: (context) => TaskEditPage(deadline),
                 ),
               );
-              if (res != null && res.status != TaskStatus.deleted) {
+              if (res != null) {
+                // 删除等状态变更通过 copy 传播到 deadline，再由 updateDeadlineList 处理并落盘
                 deadline.copy(res);
                 _taskController.updateDeadlineList();
                 _taskController.updateDeadlineListTime();
