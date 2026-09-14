@@ -7,6 +7,23 @@ import '../utils/utils.dart';
 import '../design/app_visual.dart';
 import '../design/round_rectangle_card.dart';
 
+/// 针对进度条填充色的可读性增强函数。
+///
+/// 亮色模式下白底卡片上较浅颜色（如系统黄）对比度严重不足，通过降低亮度并略提饱和度，
+/// 确保在白色背景上的对比度满足 WCAG 图形元素 3:1 要求；暗色模式下暗底上浅色本身可见，保持原色不动。
+Color readableBarColor(Color color, Brightness brightness) {
+  if (brightness == Brightness.dark) {
+    return color;
+  }
+  final hsl = HSLColor.fromColor(color);
+  final targetLightness = hsl.lightness > 0.34 ? 0.34 : hsl.lightness;
+  final targetSaturation = (hsl.saturation * 1.05).clamp(0.0, 1.0);
+  return hsl
+      .withLightness(targetLightness)
+      .withSaturation(targetSaturation)
+      .toColor();
+}
+
 /// 纯 Cupertino 细进度条，避免依赖 Material 的 LinearProgressIndicator。
 class _ThinProgressBar extends StatelessWidget {
   const _ThinProgressBar({
@@ -22,6 +39,11 @@ class _ThinProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = value.isFinite ? value.clamp(0.0, 1.0) : 0.0;
+    final brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    final resolvedColor = CupertinoDynamicColor.resolve(color, context);
+    final fillColor = readableBarColor(resolvedColor, brightness);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(height / 2),
       child: SizedBox(
@@ -29,12 +51,12 @@ class _ThinProgressBar extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            ColoredBox(color: color.withValues(alpha: 0.12)),
+            ColoredBox(color: resolvedColor.withValues(alpha: 0.12)),
             Align(
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
                 widthFactor: t,
-                child: ColoredBox(color: color),
+                child: ColoredBox(color: fillColor),
               ),
             ),
           ],
