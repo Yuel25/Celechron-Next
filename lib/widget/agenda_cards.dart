@@ -4,7 +4,6 @@ import 'package:flutter/semantics.dart';
 import '../model/period.dart';
 import '../model/task.dart';
 import '../utils/utils.dart';
-import '../design/app_visual.dart';
 import '../design/round_rectangle_card.dart';
 
 /// 针对进度条填充色的可读性增强函数。
@@ -87,6 +86,73 @@ String periodLabel(PeriodType type) => switch (type) {
       PeriodType.virtual => '空闲',
     };
 
+/// 方案 A · 浅彩底 + 强调描边的卡片视觉样式。
+@visibleForTesting
+class FeaturedCardStyle {
+  const FeaturedCardStyle({
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.borderWidth,
+    required this.accentColor,
+  });
+
+  final Color backgroundColor;
+  final Color borderColor;
+  final double borderWidth;
+  final Color accentColor;
+
+  Border get border => Border.all(color: borderColor, width: borderWidth);
+
+  factory FeaturedCardStyle.from({
+    required Color color,
+    required Brightness brightness,
+    Color darkBaseColor = CupertinoColors.black,
+  }) {
+    if (brightness == Brightness.dark) {
+      return FeaturedCardStyle(
+        backgroundColor: Color.alphaBlend(
+          color.withValues(alpha: 0.16),
+          darkBaseColor,
+        ),
+        borderColor: color.withValues(alpha: 0.6),
+        borderWidth: 1.0,
+        accentColor: color,
+      );
+    } else {
+      final enhanced = readableBarColor(color, Brightness.light);
+      return FeaturedCardStyle(
+        backgroundColor: Color.alphaBlend(
+          color.withValues(alpha: 0.10),
+          CupertinoColors.white,
+        ),
+        borderColor: enhanced,
+        borderWidth: 1.5,
+        accentColor: enhanced,
+      );
+    }
+  }
+
+  factory FeaturedCardStyle.resolve({
+    required Color color,
+    required BuildContext context,
+  }) {
+    final brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    final resolvedColor = CupertinoDynamicColor.resolve(color, context);
+    final darkBase = CupertinoDynamicColor.resolve(
+      CupertinoColors.systemBackground,
+      context,
+    );
+    return FeaturedCardStyle.from(
+      color: resolvedColor,
+      brightness: brightness,
+      darkBaseColor: darkBase,
+    );
+  }
+}
+
+typedef _FeaturedCardStyle = FeaturedCardStyle;
+
 class AgendaPeriodCard extends StatelessWidget {
   const AgendaPeriodCard(
       {super.key,
@@ -119,19 +185,21 @@ class AgendaPeriodCard extends StatelessWidget {
             .clamp(0.0, 1.0);
     final secondary =
         CupertinoDynamicColor.resolve(CupertinoColors.secondaryLabel, context);
+    final featuredStyle = featured
+        ? _FeaturedCardStyle.resolve(color: color, context: context)
+        : null;
     return RoundRectangleCard(
       onTap: onTap,
       animate: false,
-      color: featured
-          ? CupertinoDynamicColor.resolve(AppVisual.brandSoft, context)
-          : null,
-      border:
-          featured ? Border.all(color: color.withValues(alpha: 0.22)) : null,
+      color: featuredStyle?.backgroundColor,
+      border: featuredStyle?.border,
       boxShadow: const [],
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('${active ? '进行中 · ' : ''}${periodLabel(period.type)}',
             style: TextStyle(
-                fontSize: 12, color: color, fontWeight: FontWeight.w600)),
+                fontSize: 12,
+                color: featuredStyle?.accentColor ?? color,
+                fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Text(period.summary,
             maxLines: featured ? 3 : 2,
@@ -167,7 +235,9 @@ class AgendaPeriodCard extends StatelessWidget {
                       ? '还剩 $countdown'
                       : '$countdown后开始',
               style: TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.w600, color: color)),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: featuredStyle!.accentColor)),
           if (active) ...[
             const SizedBox(height: 12),
             Semantics(

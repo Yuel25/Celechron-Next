@@ -277,4 +277,225 @@ void main() {
     await tester.pumpWidget(buildCard(start.add(const Duration(minutes: 60))));
     expect(tester.widget<Semantics>(taskProgFinder).properties.value, '100%');
   });
+
+  group('AgendaPeriodCard 方案 A featured 卡片视觉样式', () {
+    final baseTime = DateTime(2030, 9, 5, 14, 0);
+
+    test('FeaturedCardStyle.from 针对 systemYellow 计算出的颜色值符合方案 A 规格', () {
+      // 亮色模式
+      final lightStyle = FeaturedCardStyle.from(
+        color: CupertinoColors.systemYellow.color,
+        brightness: Brightness.light,
+      );
+      expect(
+        lightStyle.backgroundColor,
+        Color.alphaBlend(
+          CupertinoColors.systemYellow.color.withValues(alpha: 0.10),
+          CupertinoColors.white,
+        ),
+      );
+      expect(lightStyle.backgroundColor.toARGB32(), 0xFFFFFAE6);
+      expect(lightStyle.borderColor, const Color(0xFFAD8B00));
+      expect(lightStyle.borderWidth, 1.5);
+      expect(lightStyle.accentColor, const Color(0xFFAD8B00));
+
+      // 暗色模式
+      final darkStyle = FeaturedCardStyle.from(
+        color: CupertinoColors.systemYellow.darkColor,
+        brightness: Brightness.dark,
+        darkBaseColor: CupertinoColors.black,
+      );
+      expect(
+        darkStyle.backgroundColor,
+        Color.alphaBlend(
+          CupertinoColors.systemYellow.darkColor.withValues(alpha: 0.16),
+          CupertinoColors.black,
+        ),
+      );
+      expect(darkStyle.backgroundColor.toARGB32(), 0xFF292202);
+      expect(darkStyle.borderColor,
+          CupertinoColors.systemYellow.darkColor.withValues(alpha: 0.6));
+      expect(darkStyle.borderWidth, 1.0);
+      expect(darkStyle.accentColor, CupertinoColors.systemYellow.darkColor);
+    });
+    final period = Period(
+      summary: '计算机系统结构',
+      location: '紫金港 · 西一 407',
+      startTime: baseTime.subtract(const Duration(minutes: 20)),
+      endTime: baseTime.add(const Duration(minutes: 40)),
+    );
+
+    testWidgets('featured 卡片亮色模式：背景 10% 白底混合、边框与强调文字为深色变体', (tester) async {
+      await tester.pumpWidget(
+        CupertinoApp(
+          theme: const CupertinoThemeData(brightness: Brightness.light),
+          home: CupertinoPageScaffold(
+            child: AgendaPeriodCard(
+              period: period,
+              now: baseTime,
+              color: CupertinoColors.systemYellow,
+              featured: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final expectedResolved = CupertinoColors.systemYellow.color;
+      final expectedBg = Color.alphaBlend(
+        expectedResolved.withValues(alpha: 0.10),
+        CupertinoColors.white,
+      );
+      final expectedDarkVariant = readableBarColor(
+        expectedResolved,
+        Brightness.light,
+      );
+
+      final cardContainer = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(RoundRectangleCard),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoration = cardContainer.decoration as BoxDecoration;
+
+      // 验证背景为 color 10% 白底混合
+      expect(decoration.color, expectedBg);
+
+      // 验证边框为深色变体，1.5px
+      expect(decoration.border, isNotNull);
+      final border = decoration.border as Border;
+      expect(border.top.color, expectedDarkVariant);
+      expect(border.top.width, 1.5);
+
+      // 验证强调文字为深色变体
+      final tagText = tester.widget<Text>(find.text('进行中 · 课程'));
+      expect(tagText.style?.color, expectedDarkVariant);
+
+      final countdownText = tester.widget<Text>(find.text('还剩 40 分钟'));
+      expect(countdownText.style?.color, expectedDarkVariant);
+    });
+
+    testWidgets('featured 卡片暗色模式：背景 16% 暗底混合、边框 60% 透明度原色、强调文字为原色',
+        (tester) async {
+      await tester.pumpWidget(
+        CupertinoApp(
+          theme: const CupertinoThemeData(brightness: Brightness.dark),
+          home: CupertinoPageScaffold(
+            child: AgendaPeriodCard(
+              period: period,
+              now: baseTime,
+              color: CupertinoColors.systemYellow,
+              featured: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final expectedResolved = CupertinoColors.systemYellow.darkColor;
+      final expectedDarkBase = CupertinoColors.systemBackground.darkColor;
+      final expectedBg = Color.alphaBlend(
+        expectedResolved.withValues(alpha: 0.16),
+        expectedDarkBase,
+      );
+      final expectedBorderColor = expectedResolved.withValues(alpha: 0.6);
+
+      final cardContainer = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(RoundRectangleCard),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoration = cardContainer.decoration as BoxDecoration;
+
+      // 验证背景为 16% 暗底混合
+      expect(decoration.color, expectedBg);
+
+      // 验证边框为 60% 透明度原色，1.0px
+      expect(decoration.border, isNotNull);
+      final border = decoration.border as Border;
+      expect(border.top.color, expectedBorderColor);
+      expect(border.top.width, 1.0);
+
+      // 验证强调文字为原色
+      final tagText = tester.widget<Text>(find.text('进行中 · 课程'));
+      expect(tagText.style?.color?.toARGB32(), expectedResolved.toARGB32());
+
+      final countdownText = tester.widget<Text>(find.text('还剩 40 分钟'));
+      expect(
+          countdownText.style?.color?.toARGB32(), expectedResolved.toARGB32());
+    });
+
+    testWidgets('非 featured 卡片不受影响：亮色与暗色下均保持原背景无边框且标签文字为原色', (tester) async {
+      // 亮色模式测试
+      await tester.pumpWidget(
+        CupertinoApp(
+          theme: const CupertinoThemeData(brightness: Brightness.light),
+          home: CupertinoPageScaffold(
+            child: AgendaPeriodCard(
+              period: period,
+              now: baseTime,
+              color: CupertinoColors.systemYellow,
+              featured: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      var cardContainer = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(RoundRectangleCard),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      var decoration = cardContainer.decoration as BoxDecoration;
+
+      expect(decoration.color, CupertinoColors.white);
+      expect(decoration.border, isNull);
+      var tagText = tester.widget<Text>(find.text('进行中 · 课程'));
+      expect(tagText.style?.color, CupertinoColors.systemYellow);
+      expect(find.text('还剩 40 分钟'), findsNothing);
+
+      // 暗色模式测试
+      await tester.pumpWidget(
+        CupertinoApp(
+          theme: const CupertinoThemeData(brightness: Brightness.dark),
+          home: CupertinoPageScaffold(
+            child: AgendaPeriodCard(
+              period: period,
+              now: baseTime,
+              color: CupertinoColors.systemYellow,
+              featured: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      cardContainer = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(RoundRectangleCard),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      decoration = cardContainer.decoration as BoxDecoration;
+
+      expect(decoration.color?.toARGB32(),
+          CupertinoColors.secondarySystemBackground.darkColor.toARGB32());
+      expect(decoration.border, isNull);
+      tagText = tester.widget<Text>(find.text('进行中 · 课程'));
+      expect(tagText.style?.color, CupertinoColors.systemYellow);
+      expect(find.text('还剩 40 分钟'), findsNothing);
+    });
+  });
 }
