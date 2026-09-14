@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:celechron/utils/tuple.dart';
 import 'package:celechron/model/session.dart';
 import 'package:celechron/design/round_rectangle_card.dart';
+import 'package:celechron/design/app_visual.dart';
+import 'package:celechron/model/semester.dart';
 import 'package:celechron/page/scholar/course_schedule/course_card.dart';
 import 'package:celechron/page/calendar/calendar_controller.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,7 +15,48 @@ class ScheduleView extends StatelessWidget {
 
   const ScheduleView({super.key, required this.controller});
 
-  Widget _courseSchedule(BuildContext context) {
+  Widget _buildUpcomingBanner(BuildContext context, Semester semester) {
+    final dateStr = '${semester.firstDay.month}月${semester.firstDay.day}日';
+    final bannerText = '未开学 · 新学期 $dateStr开始，下面是它的课表';
+
+    final bg = CupertinoDynamicColor.resolve(AppVisual.brandSoft, context);
+    final brandColor = CupertinoDynamicColor.resolve(AppVisual.brand, context);
+
+    return Container(
+      key: const Key('upcoming_semester_banner'),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppVisual.controlRadius),
+        border: Border.all(
+          color: brandColor.withValues(alpha: 0.25),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            CupertinoIcons.info_circle_fill,
+            size: 16,
+            color: brandColor,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              bannerText,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppVisual.label(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _courseSchedule(BuildContext context, Semester? semester) {
     const List<String> courseStartTime = [
       "08:00",
       "08:50",
@@ -124,9 +167,8 @@ class ScheduleView extends StatelessWidget {
           const SizedBox(height: 4),
           SizedBox(
             height: 560,
-            child: Obx(
-              () {
-                final semester = controller.getCurrentSemester();
+            child: Builder(
+              builder: (context) {
                 if (semester == null) {
                   return Center(
                     child: Text(
@@ -311,11 +353,27 @@ class ScheduleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: _courseSchedule(context),
-      ),
-    );
+    return Obx(() {
+      final currentSemester = controller.getCurrentSemester();
+      final upcomingSemester = controller.getUpcomingSemester();
+      final displayedSemester = controller.getDisplayedSemester();
+      final isUpcoming = currentSemester == null && upcomingSemester != null;
+
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (isUpcoming && displayedSemester != null) ...[
+                _buildUpcomingBanner(context, displayedSemester),
+                const SizedBox(height: 12),
+              ],
+              _courseSchedule(context, displayedSemester),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }

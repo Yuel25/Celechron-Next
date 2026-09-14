@@ -90,28 +90,60 @@ class CalendarController extends GetxController {
         : CalendarViewMode.calendar;
   }
 
-  Semester? getCurrentSemester() {
-    final now = DateTime.now();
+  Semester? getCurrentSemester([DateTime? targetTime]) {
+    final now = targetTime ?? DateTime.now();
     return scholar.value.semesters.firstWhereOrNull(
       (e) => !now.isBefore(e.firstDay) && !now.isAfter(e.lastDay),
     );
   }
 
-  bool isFirstHalfSemester(Semester semester) {
-    final now = DateTime.now();
+  Semester? getUpcomingSemester([DateTime? targetTime]) {
+    final now = targetTime ?? DateTime.now();
+    final futureSemesters =
+        scholar.value.semesters.where((s) => s.firstDay.isAfter(now)).toList();
+    if (futureSemesters.isEmpty) return null;
+    futureSemesters.sort((a, b) => a.firstDay.compareTo(b.firstDay));
+    return futureSemesters.first;
+  }
+
+  Semester? getDisplayedSemester([DateTime? targetTime]) {
+    return getCurrentSemester(targetTime) ?? getUpcomingSemester(targetTime);
+  }
+
+  bool isFirstHalfSemester(Semester semester, [DateTime? targetTime]) {
+    final now = targetTime ?? DateTime.now();
     final toFirstWeek = now.difference(semester.firstDay).inDays ~/ 7;
     return toFirstWeek < 8;
   }
 
-  String getCurrentSemesterDisplayName() {
-    final semester = getCurrentSemester();
-    if (semester == null) return '无学期信息';
+  String getCurrentSemesterDisplayName([DateTime? targetTime]) {
+    final semester = getCurrentSemester(targetTime);
+    if (semester != null) {
+      final isFirstHalf = isFirstHalfSemester(semester, targetTime);
+      if (semester.name.length >= 11) {
+        final semesterName =
+            '${semester.name.substring(2, 5)}${semester.name.substring(7, 11)}';
+        final halfName =
+            isFirstHalf ? semester.firstHalfName : semester.secondHalfName;
+        return '$semesterName $halfName学期';
+      }
+      return semester.name;
+    }
 
-    final isFirstHalf = isFirstHalfSemester(semester);
-    final semesterName =
-        '${semester.name.substring(2, 5)}${semester.name.substring(7, 11)}';
-    final halfName =
-        isFirstHalf ? semester.firstHalfName : semester.secondHalfName;
-    return '$semesterName $halfName学期';
+    final upcoming = getUpcomingSemester(targetTime);
+    if (upcoming != null) {
+      if (upcoming.name.length >= 11) {
+        final semesterName =
+            '${upcoming.name.substring(2, 5)}${upcoming.name.substring(7, 11)}';
+        final halfName = upcoming.firstHalfName;
+        return '未开学 · $semesterName $halfName学期';
+      }
+      return '未开学 · ${upcoming.name}';
+    }
+
+    return '无学期信息';
   }
+
+  String getDisplayedSemesterDisplayName([DateTime? targetTime]) =>
+      getCurrentSemesterDisplayName(targetTime);
 }
