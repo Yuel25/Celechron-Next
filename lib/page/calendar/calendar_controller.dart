@@ -92,15 +92,21 @@ class CalendarController extends GetxController {
 
   Semester? getCurrentSemester([DateTime? targetTime]) {
     final now = targetTime ?? DateTime.now();
-    return scholar.value.semesters.firstWhereOrNull(
-      (e) => !now.isBefore(e.firstDay) && !now.isAfter(e.lastDay),
-    );
+    final today = DateTime(now.year, now.month, now.day);
+    return scholar.value.semesters.firstWhereOrNull((e) {
+      final start = DateTime(e.firstDay.year, e.firstDay.month, e.firstDay.day);
+      final end = DateTime(e.lastDay.year, e.lastDay.month, e.lastDay.day);
+      return !today.isBefore(start) && !today.isAfter(end);
+    });
   }
 
   Semester? getUpcomingSemester([DateTime? targetTime]) {
     final now = targetTime ?? DateTime.now();
-    final futureSemesters =
-        scholar.value.semesters.where((s) => s.firstDay.isAfter(now)).toList();
+    final today = DateTime(now.year, now.month, now.day);
+    final futureSemesters = scholar.value.semesters.where((s) {
+      final start = DateTime(s.firstDay.year, s.firstDay.month, s.firstDay.day);
+      return start.isAfter(today);
+    }).toList();
     if (futureSemesters.isEmpty) return null;
     futureSemesters.sort((a, b) => a.firstDay.compareTo(b.firstDay));
     return futureSemesters.first;

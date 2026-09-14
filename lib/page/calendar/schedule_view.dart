@@ -22,36 +22,42 @@ class ScheduleView extends StatelessWidget {
     final bg = CupertinoDynamicColor.resolve(AppVisual.brandSoft, context);
     final brandColor = CupertinoDynamicColor.resolve(AppVisual.brand, context);
 
-    return Container(
-      key: const Key('upcoming_semester_banner'),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppVisual.controlRadius),
-        border: Border.all(
-          color: brandColor.withValues(alpha: 0.25),
-          width: 1.0,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            CupertinoIcons.info_circle_fill,
-            size: 16,
-            color: brandColor,
+    return Semantics(
+      container: true,
+      label: bannerText,
+      child: Container(
+        key: const Key('upcoming_semester_banner'),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppVisual.controlRadius),
+          border: Border.all(
+            color: brandColor.withValues(alpha: 0.25),
+            width: 1.0,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              bannerText,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppVisual.label(context),
+        ),
+        child: Row(
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                CupertinoIcons.info_circle_fill,
+                size: 16,
+                color: brandColor,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                bannerText,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppVisual.label(context),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

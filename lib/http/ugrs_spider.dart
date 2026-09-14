@@ -26,7 +26,7 @@ import 'zjuServices/zdbk.dart';
 import 'zjuServices/sztz.dart';
 import 'zjuServices/eta.dart';
 
-/// 当本科教务（zdbk）课表为空且非探测学年时，通过智慧研工（eta）兜底回填。
+/// 当本科教务（zdbk）课表为空且非探测学年、属于当前学年且尚未回填过该学期时，通过智慧研工（eta）兜底回填。
 @visibleForTesting
 Future<List<Session>> resolveTimetableSessionsWithFallback({
   required List<Session> zdbkSessions,
@@ -34,8 +34,13 @@ Future<List<Session>> resolveTimetableSessionsWithFallback({
   required String semKey,
   required Future<List<Session>> Function(String semKey) etaFallbackLoader,
   void Function(int count)? onFallbackApplied,
+  bool isCurrentAcademicYear = true,
+  bool alreadyApplied = false,
 }) async {
-  if (zdbkSessions.isEmpty && !isProbeYear) {
+  if (zdbkSessions.isEmpty &&
+      !isProbeYear &&
+      isCurrentAcademicYear &&
+      !alreadyApplied) {
     final fallback = await etaFallbackLoader(semKey);
     if (fallback.isNotEmpty) {
       onFallbackApplied?.call(fallback.length);
@@ -64,6 +69,9 @@ class UgrsSpider implements Spider {
 
   /// 本轮刷新里，eta 课表按学年学期缓存，避免同一个学期被重复请求。
   Map<String, List<Session>> _etaTimetableCache = {};
+
+  /// 本轮刷新里，记录已通过 eta 兜底回填的学年学期（例如 "2024-2025-1"），避免秋/冬重复回填。
+  Set<String> _appliedEtaFallbackSemKeys = {};
 
   Future<List<String?>>? _reloginFuture;
   Future<Cookie?>? _sztzReauthFuture;
@@ -148,8 +156,45 @@ class UgrsSpider implements Spider {
       _etaTimetableCache = value;
 
   @visibleForTesting
+  Set<String> get appliedEtaFallbackSemKeys => _appliedEtaFallbackSemKeys;
+  @visibleForTesting
+  set appliedEtaFallbackSemKeys(Set<String> value) =>
+      _appliedEtaFallbackSemKeys = value;
+
+  @visibleForTesting
   Future<List<Session>> timetableFromEta(String xnxq) =>
       _timetableFromEta(xnxq);
+
+  @visibleForTesting
+  static Future<String?> captureLogin(
+    Future<dynamic> future,
+    String serviceName, {
+    void Function()? onSuccess,
+    bool ignoreError = false,
+  }) async {
+    try {
+      await future;
+      onSuccess?.call();
+      return null;
+    } on Object catch (error, stackTrace) {
+      if (ignoreError) {
+        DiagnosticLogService.instance.record(
+          level: CelechronLogLevel.warning,
+          module: '本科生登录',
+          operation: serviceName,
+          message: '登录$serviceName失败（非阻断）：$error',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        return null;
+      }
+      return exceptionFrom(
+        error,
+        context: "无法登录$serviceName",
+        stackTrace: stackTrace,
+      ).toString();
+    }
+  }
 
   @override
   set db(DatabaseHelper? db) {
@@ -195,31 +240,6 @@ class UgrsSpider implements Spider {
     if (candidateSsoCookie == null) {
       candidateClient.close(force: true);
       return loginErrorMessages;
-    }
-    Future<String?> captureLogin(Future<dynamic> future, String serviceName,
-        {void Function()? onSuccess, bool ignoreError = false}) async {
-      try {
-        await future;
-        onSuccess?.call();
-        return null;
-      } on Object catch (error, stackTrace) {
-        if (ignoreError) {
-          DiagnosticLogService.instance.record(
-            level: CelechronLogLevel.warning,
-            module: '本科生登录',
-            operation: serviceName,
-            message: '登录$serviceName失败（非阻断）：$error',
-            error: error,
-            stackTrace: stackTrace,
-          );
-          return null;
-        }
-        return exceptionFrom(
-          error,
-          context: "无法登录$serviceName",
-          stackTrace: stackTrace,
-        ).toString();
-      }
     }
 
     final serviceErrors = await Future.wait<String?>([
@@ -452,6 +472,8 @@ class UgrsSpider implements Spider {
     var timetableFetches = <Future<String?>>[];
     var cancelTimetableFetch = false;
     _etaTimetableCache = {};
+    _appliedEtaFallbackSemKeys = {};
+    final currentAcademicYearStart = academicYearStartFor(now);
 
     for (final queryAcademicYearStart
         in timetableYearPlan.yearsFrom(yearEnroll)) {
@@ -577,12 +599,18 @@ class UgrsSpider implements Spider {
               isExpectedTimetableProbeMiss(value.item1)) {
             return null;
           }
+          final isCurrentAcademicYear =
+              queryAcademicYearStart == currentAcademicYearStart;
+          final alreadyApplied = _appliedEtaFallbackSemKeys.contains(semKey);
           sessions = await resolveTimetableSessionsWithFallback(
             zdbkSessions: sessions,
             isProbeYear: isProbeYear,
             semKey: semKey,
             etaFallbackLoader: _timetableFromEta,
+            isCurrentAcademicYear: isCurrentAcademicYear,
+            alreadyApplied: alreadyApplied,
             onFallbackApplied: (count) {
+              _appliedEtaFallbackSemKeys.add(semKey);
               DiagnosticLogService.instance.record(
                 module: '课表',
                 operation: 'etaFallback',

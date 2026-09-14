@@ -409,8 +409,12 @@ void main() {
           ['08:00', '08:45'],
           ['08:50', '09:35'],
         ],
-        'holiday': {},
-        'exchange': {},
+        'holiday': {
+          '20241001': '国庆节',
+        },
+        'exchange': {
+          '2024092920241004': '调休',
+        },
       });
 
       final newSemester = Semester('2024-2025秋冬');
@@ -418,6 +422,56 @@ void main() {
 
       expect(newSemester.periods, isNotEmpty);
       expect(newSemester.periods.first.summary, '概率论');
+      final newJson = newSemester.toJson();
+      expect(newJson['holidays'], isNotEmpty);
+      expect(newJson['exchanges'], isNotEmpty);
+    });
+
+    test('新学期已有自身校历配置时，不被历史校历覆盖', () {
+      final oldSemester = Semester('2024-2025秋冬');
+      oldSemester.addSession(createTestSession(name: '微积分'), '2024-2025-1');
+      oldSemester.addZjuCalendar({
+        'startEnd': ['20240901', '20241110', '20241111', '20250120'],
+        'sessionTime': [
+          [],
+          ['08:00', '08:45'],
+        ],
+        'holiday': {
+          '20241001': '旧国庆节',
+        },
+        'exchange': {
+          '2024092920241004': '旧调休',
+        },
+      });
+
+      final newSemester = Semester('2024-2025秋冬');
+      // 新学期已配置了新的校历（如假期、调休或节次不同）
+      newSemester.addZjuCalendar({
+        'startEnd': ['20240902', '20241111', '20241112', '20250121'],
+        'sessionTime': [
+          [],
+          ['08:05', '08:50'],
+        ],
+        'holiday': {
+          '20241002': '新国庆假期',
+        },
+        'exchange': {
+          '2024093020241005': '新调休',
+        },
+      });
+
+      newSemester.carryOverTimetablesFrom(oldSemester);
+
+      // 课表成功承接
+      expect(newSemester.sessions, hasLength(1));
+      expect(newSemester.sessions.first.name, '微积分');
+
+      // 但新学期的校历节次与假期配置未被旧校历覆盖
+      final newJson = newSemester.toJson();
+      expect(newJson['holidays'],
+          containsPair('2024-10-02T00:00:00.000', '新国庆假期'));
+      expect(newJson['holidays'],
+          isNot(containsPair('2024-10-01T00:00:00.000', '旧国庆节')));
     });
   });
 
@@ -531,6 +585,42 @@ void main() {
       expect(
           resultSem.sessions.map((s) => s.name), containsAll(['新排课A', '新排课B']));
       expect(resultSem.sessions.map((s) => s.name), isNot(contains('旧排课')));
+    });
+
+    test('学期排序专用比较器：跨年降序且同年内春夏先于秋冬', () {
+      final scholar = Scholar();
+      final autumn24 = Semester('2024-2025秋冬');
+      final spring24 = Semester('2024-2025春夏');
+      final autumn23 = Semester('2023-2024秋冬');
+      final spring23 = Semester('2023-2024春夏');
+
+      // 故意以颠倒或乱序输入
+      scholar.setScholar(
+        [null, null, null, null],
+        [autumn23, autumn24, spring23, spring24],
+        {},
+        {},
+        [],
+        null,
+      );
+
+      final names = scholar.semesters.map((s) => s.name).toList();
+      expect(
+        names,
+        ['2024-2025春夏', '2024-2025秋冬', '2023-2024春夏', '2023-2024秋冬'],
+        reason: '应保证学年降序且同年内春夏学期排在秋冬学期之前',
+      );
+    });
+
+    test('thisSemester 在 semesters[1].periods 为空时不抛 StateError 且安全回退', () {
+      final scholar = Scholar();
+      final spring = Semester('2024-2025春夏');
+      final autumn = Semester('2024-2025秋冬');
+      // 保持两者 periods 为空（未选课/未排课）
+      scholar.semesters = [spring, autumn];
+
+      expect(() => scholar.thisSemester, returnsNormally);
+      expect(scholar.thisSemester.name, '2024-2025春夏');
     });
   });
 }

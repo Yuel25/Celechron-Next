@@ -639,6 +639,53 @@ void main() {
       expect(onFallbackCount, 0);
       expect(result, isEmpty);
     });
+
+    test('已回填过的学期 (alreadyApplied: true)：即使 zdbk 为空也不再重复调用 eta 兜底', () async {
+      var fallbackCalled = false;
+      var onFallbackCount = 0;
+
+      final result = await resolveTimetableSessionsWithFallback(
+        zdbkSessions: [],
+        isProbeYear: false,
+        semKey: '2025-2026-1',
+        alreadyApplied: true,
+        etaFallbackLoader: (semKey) async {
+          fallbackCalled = true;
+          return [Session.empty()..name = '重复课'];
+        },
+        onFallbackApplied: (count) {
+          onFallbackCount = count;
+        },
+      );
+
+      expect(fallbackCalled, isFalse);
+      expect(onFallbackCount, 0);
+      expect(result, isEmpty);
+    });
+
+    test('非当前学年 (isCurrentAcademicYear: false)：即使 zdbk 为空也不调用 eta 兜底',
+        () async {
+      var fallbackCalled = false;
+      var onFallbackCount = 0;
+
+      final result = await resolveTimetableSessionsWithFallback(
+        zdbkSessions: [],
+        isProbeYear: false,
+        semKey: '2022-2023-1',
+        isCurrentAcademicYear: false,
+        etaFallbackLoader: (semKey) async {
+          fallbackCalled = true;
+          return [Session.empty()..name = '历史课'];
+        },
+        onFallbackApplied: (count) {
+          onFallbackCount = count;
+        },
+      );
+
+      expect(fallbackCalled, isFalse);
+      expect(onFallbackCount, 0);
+      expect(result, isEmpty);
+    });
   });
 
   group('4. UgrsSpider 智慧研工缓存与登录隔离', () {
@@ -687,29 +734,8 @@ void main() {
         ),
       );
 
-      // captureLogin 模式：ignoreError: true
-      Future<String?> captureLogin(Future<dynamic> future, String serviceName,
-          {bool ignoreError = false}) async {
-        try {
-          await future;
-          return null;
-        } on Object catch (error, stackTrace) {
-          if (ignoreError) {
-            DiagnosticLogService.instance.record(
-              level: CelechronLogLevel.warning,
-              module: '本科生登录',
-              operation: serviceName,
-              message: '登录$serviceName失败（非阻断）：$error',
-              error: error,
-              stackTrace: stackTrace,
-            );
-            return null;
-          }
-          return error.toString();
-        }
-      }
-
-      final result = await captureLogin(
+      // 真实调用 UgrsSpider.captureLogin，断言登录失败被安全隔离且记录警告日志
+      final result = await UgrsSpider.captureLogin(
         failingEta.login(client, Cookie('iPlanetDirectoryPro', 'token')),
         '智慧研工',
         ignoreError: true,

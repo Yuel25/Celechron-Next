@@ -4,7 +4,8 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
     <!-- flutter_local_notifications: 精确闹钟权限（备用，避免未来调用 exact alarm 时抛出 SecurityException） -->
-    <!-- 注：RECEIVE_BOOT_COMPLETED、POST_NOTIFICATIONS、VIBRATE 等已由插件清单自动合入，不重复声明 -->
+    <!-- 注：POST_NOTIFICATIONS、VIBRATE 等已由插件清单自动合入；RECEIVE_BOOT_COMPLETED 目前由 workmanager 传递依赖合入，显式声明以防传递依赖变化 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application android:label="Celechron" android:name="${applicationName}" android:icon="@mipmap/ic_launcher">

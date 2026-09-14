@@ -237,7 +237,7 @@ class AgendaPeriodCard extends StatelessWidget {
               style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: featuredStyle!.accentColor)),
+                  color: featuredStyle?.accentColor ?? color)),
           if (active) ...[
             const SizedBox(height: 12),
             Semantics(

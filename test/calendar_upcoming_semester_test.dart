@@ -1,5 +1,6 @@
 import 'package:celechron/model/scholar.dart';
 import 'package:celechron/model/semester.dart';
+import 'package:celechron/model/session.dart';
 import 'package:celechron/model/task.dart';
 import 'package:celechron/page/calendar/calendar_controller.dart';
 import 'package:celechron/page/calendar/schedule_view.dart';
@@ -68,6 +69,25 @@ void main() {
       expect(upcoming?.name, '2024-2025春夏');
       expect(displayed?.name, '2024-2025秋冬');
       expect(controller.getCurrentSemesterDisplayName(now), '24-25秋冬 秋学期');
+    });
+
+    test('场景 1b：学期最后一天白天仍属本学期（抹平到日期维度）', () {
+      rxScholar.value.semesters = [semAutumn, semSpring];
+      // semAutumn 的 lastDay 为 2025-01-15（校历午夜 00:00:00）
+      // 当天白天 14:30 仍在秋冬学期内，不应提前切换到下学期或展示未开学横幅
+      final lastDayAfternoon = DateTime(2025, 1, 15, 14, 30);
+
+      final current = controller.getCurrentSemester(lastDayAfternoon);
+      final upcoming = controller.getUpcomingSemester(lastDayAfternoon);
+      final displayed = controller.getDisplayedSemester(lastDayAfternoon);
+
+      expect(current?.name, '2024-2025秋冬');
+      expect(upcoming?.name, '2024-2025春夏');
+      expect(displayed?.name, '2024-2025秋冬');
+      expect(
+        controller.getCurrentSemesterDisplayName(lastDayAfternoon),
+        isNot(contains('未开学')),
+      );
     });
 
     test('场景 2：假期中 (during vacation between semesters)', () {
@@ -150,12 +170,22 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      // 设置未来学期（firstDay 在未来）
+      // 设置未来学期（firstDay 在未来），并注入真实排课数据
       final upcomingSem = FakeSemester(
         '2026-2027秋冬',
         firstDay: DateTime.now().add(const Duration(days: 5)),
         lastDay: DateTime.now().add(const Duration(days: 120)),
       );
+      final session = Session.empty()
+        ..name = '编译原理'
+        ..teacher = '张老师'
+        ..dayOfWeek = 1
+        ..time = [1, 2]
+        ..firstHalf = true
+        ..secondHalf = true
+        ..confirmed = true;
+      upcomingSem.addSession(session, '2026-2027-1');
+
       rxScholar.value.semesters = [upcomingSem];
       rxScholar.refresh();
 
@@ -176,8 +206,9 @@ void main() {
         find.text('未开学 · 新学期 $expectedDateStr开始，下面是它的课表'),
         findsOneWidget,
       );
-      // 不应显示“当前不在学期内”
+      // 不应显示“当前不在学期内”，且应渲染出真实课程卡片
       expect(find.text('当前不在学期内'), findsNothing);
+      expect(find.text('编译原理'), findsOneWidget);
     });
 
     testWidgets('当前学期内不展示未开学横幅', (tester) async {
@@ -259,6 +290,13 @@ void main() {
         find.text('未开学 · 新学期 $expectedDateStr开始，下面是它的课表'),
         findsOneWidget,
       );
+
+      // 断言暗色模式下横幅背景使用 brandSoft 暗色值 (0xFF252A48)
+      final bannerContainer = tester.widget<Container>(
+        find.byKey(const Key('upcoming_semester_banner')),
+      );
+      final decoration = bannerContainer.decoration as BoxDecoration;
+      expect(decoration.color?.toARGB32(), const Color(0xFF252A48).toARGB32());
     });
   });
 }

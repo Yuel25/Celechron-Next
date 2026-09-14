@@ -22,6 +22,21 @@ import 'package:celechron/database/database_helper.dart';
 part 'scholar_json.dart';
 part 'scholar_sync.dart';
 
+/// 学期排序专用比较器：
+/// 学年部分（前 9 个字符，如 "2024-2025"）按降序排列；
+/// 同一学年内，含 "春" 的学期（春夏，第二学期）排在前面（先于秋冬第一学期）。
+int compareSemestersChronological(Semester a, Semester b) {
+  final yearA = a.name.length >= 9 ? a.name.substring(0, 9) : a.name;
+  final yearB = b.name.length >= 9 ? b.name.substring(0, 9) : b.name;
+  final yearCmp = yearB.compareTo(yearA);
+  if (yearCmp != 0) return yearCmp;
+  final aHasSpring = a.name.contains('春');
+  final bHasSpring = b.name.contains('春');
+  if (aHasSpring && !bHasSpring) return -1;
+  if (!aHasSpring && bHasSpring) return 1;
+  return b.name.compareTo(a.name);
+}
+
 /// 学业领域数据模型。登录/刷新编排在 [ScholarSyncService]（part），
 /// 序列化在 scholar_json.dart（part）；对外仍保留 login/refresh 薄封装。
 class Scholar {
@@ -102,11 +117,12 @@ class Scholar {
 
   Semester get thisSemester {
     if (semesters.length > 1) {
-      if (semesters[1]
-          .periods
-          .last
-          .endTime
-          .isAfter(DateTime.now().subtract(const Duration(days: 14)))) {
+      if (semesters[1].periods.isNotEmpty &&
+          semesters[1]
+              .periods
+              .last
+              .endTime
+              .isAfter(DateTime.now().subtract(const Duration(days: 14)))) {
         return semesters[1];
       } else {
         return semesters[0];
@@ -247,7 +263,7 @@ class Scholar {
           updatedSemesters.add(existing);
         }
       }
-      updatedSemesters.sort((a, b) => b.name.compareTo(a.name));
+      updatedSemesters.sort(compareSemestersChronological);
       semesters = updatedSemesters;
     } else if (tempSemesters.isNotEmpty) {
       // 降级刷新只合并可用片段，避免不完整新对象覆盖已有课表明细。
@@ -260,7 +276,7 @@ class Scholar {
           semesters[existingIndex].mergePartialFrom(incoming);
         }
       }
-      semesters.sort((a, b) => b.name.compareTo(a.name));
+      semesters.sort(compareSemestersChronological);
     }
     if (errorResult[2] == false) {
       todos = tempTodos;
