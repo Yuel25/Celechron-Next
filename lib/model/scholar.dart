@@ -232,7 +232,23 @@ class Scholar {
       grades = tempGrades;
     }
     if (errorResult[1] == false && tempSemesters.isNotEmpty) {
-      semesters = tempSemesters;
+      final updatedSemesters = List<Semester>.from(tempSemesters);
+      for (final existing in semesters) {
+        if (existing.sessions.isEmpty) continue;
+        final incomingIndex =
+            updatedSemesters.indexWhere((s) => s.name == existing.name);
+        if (incomingIndex >= 0) {
+          final incoming = updatedSemesters[incomingIndex];
+          if (incoming.sessions.isEmpty) {
+            incoming.carryOverTimetablesFrom(existing);
+          }
+        } else {
+          // 本地已有排课但新拉取未返回该学期（例如全空被 removeWhere 过滤），保留本地学期
+          updatedSemesters.add(existing);
+        }
+      }
+      updatedSemesters.sort((a, b) => b.name.compareTo(a.name));
+      semesters = updatedSemesters;
     } else if (tempSemesters.isNotEmpty) {
       // 降级刷新只合并可用片段，避免不完整新对象覆盖已有课表明细。
       for (final incoming in tempSemesters) {

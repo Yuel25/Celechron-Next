@@ -165,6 +165,80 @@ class Semester {
     calculateGPA();
   }
 
+  void carryOverTimetablesFrom(Semester previous) {
+    // 仅当新拉取无排课且历史有排课时才承接，避免新生/未来学期等本来无课场景误保留。
+    if (sessions.isNotEmpty || previous.sessions.isEmpty) {
+      return;
+    }
+    _invalidatePeriodsCache();
+
+    DiagnosticLogService.instance.record(
+      level: CelechronLogLevel.warning,
+      module: '课表保活',
+      operation: 'carryOver',
+      message: '学期 $name 新拉取课表为空，已承接本地已有排课（${previous.sessions.length} 节）',
+    );
+
+    Course? matchingCourse(Course previousCourse) {
+      for (final existing in _courses.values) {
+        if (previousCourse.id != null && existing.id == previousCourse.id) {
+          return existing;
+        }
+        if (existing.name == previousCourse.name) return existing;
+      }
+      return null;
+    }
+
+    for (final entry in previous.courses.entries) {
+      if (entry.value.sessions.isEmpty) continue;
+      final existing = matchingCourse(entry.value);
+      if (existing == null) {
+        final firstSession = entry.value.sessions.first;
+        final course = entry.value.id != null
+            ? Course.fromGrsSession(firstSession)
+            : Course.fromUgrsSessionWithoutID(firstSession);
+        course.id = entry.value.id;
+        course.teacher = entry.value.teacher;
+        course.credit = entry.value.credit;
+        course.confirmed = entry.value.confirmed;
+        course.online = entry.value.online;
+        course.type = entry.value.type;
+        for (var i = 1; i < entry.value.sessions.length; i++) {
+          course.completeSession(entry.value.sessions[i]);
+        }
+        _courses[entry.key] = course;
+      } else {
+        for (final session in entry.value.sessions) {
+          existing.completeSession(session);
+        }
+      }
+    }
+
+    for (final session in previous.sessions) {
+      final duplicate = _sessions.any((existing) =>
+          existing.id == session.id &&
+          existing.dayOfWeek == session.dayOfWeek &&
+          existing.time.join(',') == session.time.join(',') &&
+          existing.location == session.location);
+      if (!duplicate) _sessions.add(session);
+    }
+
+    if (_sessionToTime.every((p) => p.isEmpty) &&
+        previous._sessionToTime.any((p) => p.isNotEmpty)) {
+      _sessionToTime = previous._sessionToTime;
+    }
+    if (_dayOfWeekToDays[0][0].every((p) => p.isEmpty) &&
+        previous._dayOfWeekToDays[0][0].any((p) => p.isNotEmpty)) {
+      _dayOfWeekToDays = previous._dayOfWeekToDays;
+    }
+    if (_holidays.isEmpty && previous._holidays.isNotEmpty) {
+      _holidays = Map.from(previous._holidays);
+    }
+    if (_exchanges.isEmpty && previous._exchanges.isNotEmpty) {
+      _exchanges = Map.from(previous._exchanges);
+    }
+  }
+
   // 上半学期课表
   List<List<Session>> get firstHalfTimetable {
     return _sessions

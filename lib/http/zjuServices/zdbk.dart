@@ -483,7 +483,16 @@ class Zdbk {
                 '；响应摘要：${responseSummary(responseText)}');
           }
           final sessions = _parseSessions(items, context);
-          _writeCache('zdbk_Timetable$year$semester', jsonEncode(items));
+          if (items.isEmpty) {
+            DiagnosticLogService.instance.record(
+              level: CelechronLogLevel.warning,
+              module: context,
+              operation: 'getTimetable',
+              message: '返回空课表列表，跳过写入缓存以避免覆盖已有数据',
+            );
+          } else {
+            _writeCache('zdbk_Timetable$year$semester', jsonEncode(items));
+          }
           return Tuple(null, sessions);
         }
         throw ExceptionWithMessage("验证码识别失败");
