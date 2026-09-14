@@ -17,12 +17,33 @@ import 'package:celechron/http/zjuServices/response_utils.dart';
 import 'package:celechron/database/database_helper.dart';
 import 'package:celechron/model/grade.dart';
 import 'package:celechron/model/semester.dart';
+import 'package:celechron/model/session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:celechron/services/diagnostic_log_service.dart';
 
 import 'zjuServices/zjuam.dart';
 import 'zjuServices/zdbk.dart';
 import 'zjuServices/sztz.dart';
+import 'zjuServices/eta.dart';
+
+/// 当本科教务（zdbk）课表为空且非探测学年时，通过智慧研工（eta）兜底回填。
+@visibleForTesting
+Future<List<Session>> resolveTimetableSessionsWithFallback({
+  required List<Session> zdbkSessions,
+  required bool isProbeYear,
+  required String semKey,
+  required Future<List<Session>> Function(String semKey) etaFallbackLoader,
+  void Function(int count)? onFallbackApplied,
+}) async {
+  if (zdbkSessions.isEmpty && !isProbeYear) {
+    final fallback = await etaFallbackLoader(semKey);
+    if (fallback.isNotEmpty) {
+      onFallbackApplied?.call(fallback.length);
+      return fallback;
+    }
+  }
+  return zdbkSessions;
+}
 
 /// 本科完整刷新编排器；各站点共享统一认证，但独立登录、缓存和降级。
 class UgrsSpider implements Spider {
@@ -33,12 +54,16 @@ class UgrsSpider implements Spider {
   late Zdbk _zdbk;
   late Sztz _sztz;
   late GrsNew _grsNew;
+  late Eta _eta;
   late TimeConfigService _timeConfigService;
   DateTime _lastUpdateTime = DateTime(0);
   bool fetchGrs = false;
   Map<String, double>? _practiceScores;
   bool _isPracticeScoresGet = false;
   PracticeScoreSnapshot _practiceSnapshot = PracticeScoreSnapshot.unavailable;
+
+  /// 本轮刷新里，eta 课表按学年学期缓存，避免同一个学期被重复请求。
+  Map<String, List<Session>> _etaTimetableCache = {};
 
   Future<List<String?>>? _reloginFuture;
   Future<Cookie?>? _sztzReauthFuture;
@@ -71,6 +96,7 @@ class UgrsSpider implements Spider {
     _zdbk = Zdbk();
     _sztz = Sztz(accountScope: username);
     _grsNew = GrsNew();
+    _eta = Eta();
     _timeConfigService = TimeConfigService();
     _username = username;
     _password = password;
@@ -87,6 +113,43 @@ class UgrsSpider implements Spider {
     // 同时也避免重定向时 HttpClient 自动携带旧 Cookie
     return client;
   }
+
+  /// 教务给不出课表时改问智慧研工。
+  ///
+  /// 只在 zdbk 返回空时才调用（正常路径不多打一次），并且失败一律吞掉 ——
+  /// 兜底来源不可用不该影响整次刷新。
+  Future<List<Session>> _timetableFromEta(String xnxq) async {
+    final cached = _etaTimetableCache[xnxq];
+    if (cached != null) return cached;
+    if (!_eta.isLoggedIn) {
+      _etaTimetableCache[xnxq] = const [];
+      return const [];
+    }
+    try {
+      final value = await _eta.getTimetable(_httpClient, xnxq);
+      final sessions = value.item1 == null ? value.item2 : const <Session>[];
+      _etaTimetableCache[xnxq] = sessions;
+      return sessions;
+    } on Object {
+      _etaTimetableCache[xnxq] = const [];
+      return const [];
+    }
+  }
+
+  @visibleForTesting
+  Eta get eta => _eta;
+  @visibleForTesting
+  set eta(Eta value) => _eta = value;
+
+  @visibleForTesting
+  Map<String, List<Session>> get etaTimetableCache => _etaTimetableCache;
+  @visibleForTesting
+  set etaTimetableCache(Map<String, List<Session>> value) =>
+      _etaTimetableCache = value;
+
+  @visibleForTesting
+  Future<List<Session>> timetableFromEta(String xnxq) =>
+      _timetableFromEta(xnxq);
 
   @override
   set db(DatabaseHelper? db) {
@@ -140,13 +203,22 @@ class UgrsSpider implements Spider {
         onSuccess?.call();
         return null;
       } on Object catch (error, stackTrace) {
-        return ignoreError
-            ? null
-            : exceptionFrom(
-                error,
-                context: "无法登录$serviceName",
-                stackTrace: stackTrace,
-              ).toString();
+        if (ignoreError) {
+          DiagnosticLogService.instance.record(
+            level: CelechronLogLevel.warning,
+            module: '本科生登录',
+            operation: serviceName,
+            message: '登录$serviceName失败（非阻断）：$error',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return null;
+        }
+        return exceptionFrom(
+          error,
+          context: "无法登录$serviceName",
+          stackTrace: stackTrace,
+        ).toString();
       }
     }
 
@@ -159,6 +231,9 @@ class UgrsSpider implements Spider {
           onSuccess: () {
         fetchGrs = true;
       }, ignoreError: true),
+      // 智慧研工只是课表的兜底来源，登录失败不影响其它模块
+      captureLogin(_eta.login(candidateClient, candidateSsoCookie), "智慧研工",
+          ignoreError: true),
     ]);
     loginErrorMessages.addAll(serviceErrors);
 
@@ -376,6 +451,7 @@ class UgrsSpider implements Spider {
     var calendarFallback = 0;
     var timetableFetches = <Future<String?>>[];
     var cancelTimetableFetch = false;
+    _etaTimetableCache = {};
 
     for (final queryAcademicYearStart
         in timetableYearPlan.yearsFrom(yearEnroll)) {
@@ -501,6 +577,19 @@ class UgrsSpider implements Spider {
               isExpectedTimetableProbeMiss(value.item1)) {
             return null;
           }
+          sessions = await resolveTimetableSessionsWithFallback(
+            zdbkSessions: sessions,
+            isProbeYear: isProbeYear,
+            semKey: semKey,
+            etaFallbackLoader: _timetableFromEta,
+            onFallbackApplied: (count) {
+              DiagnosticLogService.instance.record(
+                module: '课表',
+                operation: 'etaFallback',
+                message: '学期 $semKey 本科教务课表为空，改用智慧研工兜底回填：获取到 $count 条课次',
+              );
+            },
+          );
           sessions.sort((a, b) {
             if (a.dayOfWeek != b.dayOfWeek) {
               return a.dayOfWeek.compareTo(b.dayOfWeek);
