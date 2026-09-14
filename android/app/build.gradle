@@ -68,6 +68,11 @@ android {
         release {
             // 有 key.properties 时用正式 keystore 签名，否则回落 debug 签名以便本地调试
             signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+
+            // 混淆与代码压缩保持关闭（避免反射与序列化隐蔽崩溃风险）；挂载 ProGuard 规则备用
+            // minifyEnabled false
+            // shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
