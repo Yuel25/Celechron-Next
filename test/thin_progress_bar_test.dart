@@ -196,5 +196,45 @@ void main() {
 
       expect(hasFill, isTrue, reason: 'TaskCardContent 也应共用增强后的可读填充色');
     });
+
+    // 回归：FractionallySizedBox 只设 widthFactor 时填充高度塌缩为 0（v1.3.8 起
+    // 进度条填充从未真正渲染），必须断言填充的渲染尺寸非零而不只是颜色存在。
+    testWidgets('进度条填充渲染尺寸非零（回归：曾高度塌缩为 0 导致填充不可见）', (tester) async {
+      await tester.pumpWidget(CupertinoApp(
+        theme: const CupertinoThemeData(brightness: Brightness.light),
+        home: CupertinoPageScaffold(
+          child: AgendaPeriodCard(
+            period: noonPeriod,
+            now: now,
+            color: CupertinoColors.systemYellow,
+            featured: true,
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final expectedFill = readableBarColor(
+        CupertinoColors.systemYellow.color,
+        Brightness.light,
+      );
+      final fillElement = find
+          .byWidgetPredicate((w) => w is ColoredBox && w.color == expectedFill)
+          .evaluate()
+          .single;
+      final fillSize = fillElement.size!;
+      expect(fillSize.height, greaterThan(0), reason: '填充高度不能塌缩为 0');
+      expect(fillSize.width, greaterThan(0), reason: '进行中事项填充宽度应大于 0');
+
+      // 填充宽度应与进度成比例（本 fixture 进度为 15/45 = 1/3）
+      final trackElement = find
+          .byWidgetPredicate((w) =>
+              w is ColoredBox &&
+              w.color ==
+                  CupertinoColors.systemYellow.color.withValues(alpha: 0.12))
+          .evaluate()
+          .single;
+      final ratio = fillSize.width / trackElement.size!.width;
+      expect(ratio, closeTo(1 / 3, 0.02), reason: '填充宽度应反映实际进度');
+    });
   });
 }

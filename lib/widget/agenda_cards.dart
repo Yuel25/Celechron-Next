@@ -55,6 +55,7 @@ class _ThinProgressBar extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
                 widthFactor: t,
+                heightFactor: 1.0,
                 child: ColoredBox(color: fillColor),
               ),
             ),
